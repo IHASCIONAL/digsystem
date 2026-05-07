@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docker + PostgreSQL no WSL — Guia do Futuro Eu</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --code-bg: #1f2937;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .callout {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout.warning {
+      border-color: var(--yellow);
+      background: rgba(210, 153, 34, 0.08);
+    }
+
+    .callout.info {
+      border-color: var(--accent);
+      background: rgba(88, 166, 255, 0.07);
+    }
+
+    .callout.success {
+      border-color: var(--green);
+      background: rgba(63, 185, 80, 0.07);
+    }
+
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .callout.warning .callout-title { color: var(--yellow); }
+    .callout.info    .callout-title { color: var(--accent); }
+    .callout.success .callout-title { color: var(--green); }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #000;
+      font-size: 0.9rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 1rem 0 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.78rem;
+    }
+
+    p {
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.88em;
+      background: var(--code-bg);
+      color: var(--purple);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0.75rem 0 1rem;
+      position: relative;
+    }
+
+    pre code {
+      background: none;
+      color: var(--green);
+      font-size: 0.9rem;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    pre .comment {
+      color: var(--muted);
+    }
+
+    pre .cmd {
+      color: var(--accent);
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15em 0.6em;
+      border-radius: 20px;
+      vertical-align: middle;
+      margin-left: 0.4rem;
+      letter-spacing: 0.04em;
+    }
+
+    .badge.fixed { background: var(--red); color: #fff; }
+    .badge.tip   { background: var(--green); color: #000; }
+
+    ul, ol {
+      padding-left: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    li {
+      margin-bottom: 0.3rem;
+      color: var(--text);
+    }
+
+    .file-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 0.75rem 0 1rem;
+    }
+
+    .file-block-header {
+      background: var(--border);
+      padding: 0.4rem 1rem;
+      font-size: 0.8rem;
+      font-family: monospace;
+      color: var(--muted);
+    }
+
+    .file-block pre {
+      border: none;
+      border-radius: 0;
+      margin: 0;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 2rem 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      margin-top: 3rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Docker + PostgreSQL no WSL</h1>
+    <p>Guia completo para o futuro eu — do zero até o banco rodando.</p>
+  </header>
+
+  <!-- CONTEXTO -->
+  <section>
+    <h2>Contexto</h2>
+    <p>
+      Este guia documenta o processo de instalar o Docker corretamente no WSL2 (Ubuntu)
+      e subir um banco PostgreSQL via <code>docker compose</code>, com porta exposta para
+      conexão local.
+    </p>
+    <div class="callout warning">
+      <div class="callout-title">Cuidado com o docker.io</div>
+      O pacote <code>docker.io</code> disponível no <code>apt</code> do Ubuntu é uma versão
+      desatualizada e apresenta problemas no WSL2 (socket não responde, daemon não sobe).
+      <strong>Use o script oficial da Docker.</strong>
+    </div>
+  </section>
+
+  <!-- PASSO 1 -->
+  <section>
+    <h2><span class="step-number">1</span> Atualizar o sistema</h2>
+    <p>Antes de instalar qualquer coisa, atualize os pacotes do sistema:</p>
+    <pre><code><span class="comment"># Atualiza lista de pacotes</span>
+<span class="cmd">sudo apt update</span></code></pre>
+  </section>
+
+  <!-- PASSO 2 -->
+  <section>
+    <h2><span class="step-number">2</span> Remover versão antiga (se instalada) <span class="badge fixed">Lição aprendida</span></h2>
+    <p>
+      Se você tentou instalar via <code>apt install docker.io</code> e teve problemas
+      (daemon não subia, <code>docker ps</code> falhava), remova tudo antes de continuar:
+    </p>
+    <pre><code><span class="cmd">sudo apt remove docker.io docker-compose docker-compose-v2</span></code></pre>
+    <div class="callout warning">
+      <div class="callout-title">Por que isso acontece?</div>
+      O <code>docker.io</code> do apt não é mantido pela Docker Inc. No WSL2 ele tem dificuldade
+      em iniciar o daemon (<code>dockerd</code>) porque o WSL não usa systemd por padrão.
+      O script oficial da Docker lida com isso corretamente.
+    </div>
+  </section>
+
+  <!-- PASSO 3 -->
+  <section>
+    <h2><span class="step-number">3</span> Instalar o Docker (método oficial)</h2>
+    <p>Execute o script de instalação oficial da Docker:</p>
+    <pre><code><span class="cmd">curl -fsSL https://get.docker.com | sh</span></code></pre>
+    <p>Isso instala a versão mais recente do Docker Engine, CLI e containerd automaticamente.</p>
+    <div class="callout info">
+      <div class="callout-title">O que esse script faz</div>
+      <ul>
+        <li>Adiciona o repositório oficial da Docker ao apt</li>
+        <li>Instala <code>docker-ce</code>, <code>docker-ce-cli</code>, <code>containerd.io</code></li>
+        <li>Instala o plugin <code>docker compose</code> (V2 — sem hífen)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- PASSO 4 -->
+  <section>
+    <h2><span class="step-number">4</span> Adicionar seu usuário ao grupo docker</h2>
+    <p>
+      Por padrão, apenas o <code>root</code> pode usar o Docker. Para rodar sem <code>sudo</code>
+      adicione seu usuário ao grupo <code>docker</code>:
+    </p>
+    <pre><code><span class="cmd">sudo usermod -aG docker $USER</span></code></pre>
+    <div class="callout warning">
+      <div class="callout-title">Reinicie a sessão WSL</div>
+      A alteração de grupo só tem efeito em <strong>novas sessões</strong>. Feche o terminal
+      WSL completamente (ou rode <code>newgrp docker</code>) antes de testar.
+    </div>
+    <p>Verifique que funcionou:</p>
+    <pre><code><span class="cmd">docker ps</span>
+<span class="comment"># Deve retornar a lista vazia sem erro de permissão</span></code></pre>
+  </section>
+
+  <!-- PASSO 5 -->
+  <section>
+    <h2><span class="step-number">5</span> Iniciar o daemon do Docker no WSL</h2>
+    <p>
+      O WSL2 não tem systemd ativado por padrão, então o Docker não sobe automático.
+      Inicie o serviço manualmente:
+    </p>
+    <pre><code><span class="cmd">sudo service docker start</span></code></pre>
+    <p>Para verificar se está rodando:</p>
+    <pre><code><span class="cmd">sudo service docker status</span></code></pre>
+    <div class="callout info">
+      <div class="callout-title">Dica: iniciar automático</div>
+      Adicione <code>sudo service docker start</code> ao seu <code>~/.bashrc</code> ou
+      <code>~/.profile</code> para não precisar rodar toda vez que abrir o WSL.
+    </div>
+  </section>
+
+  <!-- PASSO 6 -->
+  <section>
+    <h2><span class="step-number">6</span> Criar o arquivo docker compose</h2>
+    <p>
+      No projeto, crie a pasta <code>infra/</code> e dentro dela o arquivo
+      <code>compose.yaml</code> com a configuração do PostgreSQL:
+    </p>
+    <div class="file-block">
+      <div class="file-block-header">infra/compose.yaml</div>
+      <pre><code>services:
+  database:
+    image: "postgres:16.0-alpine3.18"
+    environment:
+      POSTGRES_PASSWORD: "local_password"
+    ports:
+      - "5432:5432"</code></pre>
+    </div>
+    <ul>
+      <li><code>postgres:16.0-alpine3.18</code> — imagem leve baseada em Alpine Linux</li>
+      <li><code>POSTGRES_PASSWORD</code> — senha do usuário padrão (<code>postgres</code>)</li>
+      <li><code>5432:5432</code> — expõe a porta do container na máquina host</li>
+    </ul>
+  </section>
+
+  <!-- PASSO 7 -->
+  <section>
+    <h2><span class="step-number">7</span> Subir o banco de dados</h2>
+    <p>Na raiz do projeto, execute:</p>
+    <pre><code><span class="comment"># Sobe em background (-d = detached)</span>
+<span class="cmd">docker compose -f infra/compose.yaml up -d</span></code></pre>
+    <p>Verifique que o container está rodando:</p>
+    <pre><code><span class="cmd">docker ps</span>
+<span class="comment"># Deve exibir o container "database" com status "Up"</span></code></pre>
+    <p>Para parar quando não precisar mais:</p>
+    <pre><code><span class="cmd">docker compose -f infra/compose.yaml down</span></code></pre>
+  </section>
+
+  <!-- PASSO 8 -->
+  <section>
+    <h2><span class="step-number">8</span> Conectar ao PostgreSQL</h2>
+    <p>Com o container rodando, conecte usando o cliente <code>psql</code> via Docker
+    (sem precisar instalar o psql no WSL):</p>
+    <pre><code><span class="cmd">docker compose -f infra/compose.yaml exec database psql -U postgres</span></code></pre>
+    <p>Ou, se tiver o <code>psql</code> instalado localmente:</p>
+    <pre><code><span class="cmd">psql -h localhost -U postgres -p 5432</span>
+<span class="comment"># Senha: local_password</span></code></pre>
+    <p>Dentro do psql, alguns comandos úteis:</p>
+    <pre><code>\l          <span class="comment">-- lista bancos de dados</span>
+\c nome_db  <span class="comment">-- conecta a um banco</span>
+\dt         <span class="comment">-- lista tabelas</span>
+\q          <span class="comment">-- sai</span></code></pre>
+  </section>
+
+  <!-- RESUMO -->
+  <section>
+    <h2>Resumo rápido (TL;DR)</h2>
+    <div class="callout success">
+      <div class="callout-title">Sequência correta do zero</div>
+    </div>
+    <pre><code><span class="comment"># 1. Remover versão antiga (se necessário)</span>
+<span class="cmd">sudo apt remove docker.io docker-compose docker-compose-v2</span>
+
+<span class="comment"># 2. Instalar Docker oficial</span>
+<span class="cmd">curl -fsSL https://get.docker.com | sh</span>
+
+<span class="comment"># 3. Adicionar usuário ao grupo docker</span>
+<span class="cmd">sudo usermod -aG docker $USER</span>
+
+<span class="comment"># 4. Reiniciar sessão WSL, depois iniciar daemon</span>
+<span class="cmd">sudo service docker start</span>
+
+<span class="comment"># 5. Subir o banco</span>
+<span class="cmd">docker compose -f infra/compose.yaml up -d</span>
+
+<span class="comment"># 6. Conectar</span>
+<span class="cmd">docker compose -f infra/compose.yaml exec database psql -U postgres</span></code></pre>
+  </section>
+
+  <!-- TROUBLESHOOTING -->
+  <section>
+    <h2>Troubleshooting</h2>
+
+    <h3>Problema</h3>
+    <p><code>Cannot connect to the Docker daemon at unix:///var/run/docker.sock</code></p>
+    <p><strong>Solução:</strong> o daemon não está rodando. Execute:</p>
+    <pre><code><span class="cmd">sudo service docker start</span></code></pre>
+
+    <hr class="divider" />
+
+    <h3>Problema</h3>
+    <p><code>permission denied while trying to connect to the Docker daemon socket</code></p>
+    <p><strong>Solução:</strong> seu usuário não está no grupo docker ou a sessão não foi renovada.</p>
+    <pre><code><span class="comment"># Verifique os grupos do usuário atual</span>
+<span class="cmd">groups</span>
+
+<span class="comment"># Se "docker" não aparecer, rode e abra nova sessão</span>
+<span class="cmd">sudo usermod -aG docker $USER</span>
+<span class="cmd">newgrp docker</span></code></pre>
+
+    <hr class="divider" />
+
+    <h3>Problema</h3>
+    <p>Porta 5432 já em uso</p>
+    <p><strong>Solução:</strong> verifique o que está usando a porta:</p>
+    <pre><code><span class="cmd">sudo lsof -i :5432</span></code></pre>
+  </section>
+
+  <footer>
+    Gerado em 2026-05-06 &mdash; Para o futuro eu, de mim mesmo.
+  </footer>
+
+</div>
+</body>
+</html>
