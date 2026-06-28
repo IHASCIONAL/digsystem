@@ -1,5 +1,4 @@
 import orchestrator from "tests/orchestrator.js";
-import user from "models/user.js";
 import { describe } from "node_modules/eslint/lib/rule-tester/rule-tester";
 
 beforeAll(async () => {
@@ -258,14 +257,10 @@ describe("Default user", () => {
 
     const responseBody = await response.json();
 
-    const storedUser = await user.findOneByUsername(createdUser.username);
-
     expect(responseBody).toEqual({
       id: responseBody.id,
       username: createdUser.username,
-      //  email: createdUser.email,
       features: ["create:session", "read:session", "update:user"],
-      //password: storedUser.password,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
     });

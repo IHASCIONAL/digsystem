@@ -12,7 +12,7 @@ beforeAll(async () => {
 
 describe("POST /api/v1/users", () => {
   describe("Anonymous user", () => {
-    test("With unique and valid data", async () => {
+    test("With unique and valid data2", async () => {
       const response = await fetch("http://localhost:3000/api/v1/users", {
         method: "POST",
         headers: {

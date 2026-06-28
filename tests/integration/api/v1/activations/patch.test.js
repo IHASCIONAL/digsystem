@@ -8,8 +8,6 @@ beforeAll(async () => {
 
 describe("PATCH /api/v1/activations", () => {
   test("Template test to not fail and fill up later", async () => {
-    const createdUser = await orchestrator.createUser();
-
     const response = await fetch("http://localhost:3000/api/v1/activations", {
       method: "PATCH",
       headers: {
