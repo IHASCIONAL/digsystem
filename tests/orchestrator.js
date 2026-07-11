@@ -5,6 +5,7 @@ import migrator from "models/migrator.js";
 import user from "models/user.js";
 import session from "models/session";
 import activation from "models/activation.js";
+import vehicle from "models/vehicle.js";
 
 const emailHttpUrl = `http://${process.env.EMAIL_HTTP_HOST}:${process.env.EMAIL_HTTP_PORT}`;
 
@@ -65,6 +66,20 @@ async function createSession(userId) {
   return await session.create(userId);
 }
 
+async function createVehicle(vehicleObject = {}) {
+  return await vehicle.create({
+    plate: vehicleObject.plate || generateRandomPlate(),
+    model: vehicleObject.model,
+    brand: vehicleObject.brand,
+    color: vehicleObject.color,
+    notes: vehicleObject.notes,
+  });
+
+  function generateRandomPlate() {
+    return `${faker.string.alpha({ length: 3, casing: "upper" })}${faker.string.numeric(4)}`;
+  }
+}
+
 async function deleteAllEmails() {
   await fetch(`${emailHttpUrl}/messages`, {
     method: "DELETE",
@@ -106,6 +121,7 @@ const orchestrator = {
   runPendingMigrations,
   createUser,
   createSession,
+  createVehicle,
   deleteAllEmails,
   getLastEmail,
   extractUUID,

@@ -13,6 +13,7 @@
     "services:wait:database": "node infra/scripts/wait-for-postgres",
     "migrations:create": "node-pg-migrate --migrations-dir infra/migrations create",
     "migrations:up": "node-pg-migrate --migrations-dir infra/migrations --envPath .env.development up",
+    "migrations:dry-run": "node-pg-migrate up --dry-run --migrations-dir infra/migrations --envPath .env.development",
     "lint:prettier:check": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
     "lint:eslint:check": "next lint --dir .",
@@ -52,6 +53,7 @@
     "eslint-plugin-jest": "28.8.0",
     "husky": "9.1.7",
     "jest": "29.7.0",
+    "lint-staged": "17.0.8",
     "prettier": "3.8.3",
     "set-cookie-parser": "2.7.1"
   },
@@ -59,6 +61,9 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
   },
   "engines": {
     "node": "24"
