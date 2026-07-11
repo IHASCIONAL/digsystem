@@ -22,7 +22,30 @@ const availableFeatures = [
   //STATUS
   "read:status",
   "read:status:all",
+
+  // VEHICLE
+  "create:vehicle",
+  "read:vehicle",
+  "update:vehicle",
+
+  // STAY
+  "create:stay",
+  "read:stay",
+  "update:stay",
 ];
+
+const collaboratorFeatures = [
+  "create:session",
+  "read:session",
+  "create:vehicle",
+  "read:vehicle",
+  "update:vehicle",
+  "create:stay",
+  "read:stay",
+  "update:stay",
+];
+
+const adminFeatures = [...collaboratorFeatures, "create:user", "read:user"];
 function can(user, feature, resource) {
   validateUser(user);
   validateFeature(feature);
@@ -149,6 +172,8 @@ function validateResource(resource) {
 const authorization = {
   can,
   filterOutput,
+  collaboratorFeatures,
+  adminFeatures,
 };
 
 export default authorization;

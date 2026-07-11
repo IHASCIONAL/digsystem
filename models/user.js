@@ -224,7 +224,9 @@ async function runInserQuery(userInputValues) {
 }
 
 function injectDefaultFeaturesInObject(userInputValues) {
-  userInputValues.features = ["read:activation_token"];
+  if (!userInputValues.features) {
+    userInputValues.features = ["read:activation_token"];
+  }
 }
 
 async function runUpdateQuery(userWithNewValues) {
