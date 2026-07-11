@@ -1,5 +1,43 @@
-function Home() {
-  return <h1>Sou bom</h1>;
-}
+import Link from "next/link";
+import styles from "./index.module.css";
 
-export default Home;
+const SCREENS = [
+  {
+    href: "/veiculos/operacao",
+    title: "Entrada e saída",
+    description: "Registrar a entrada ou saída de um veículo pela placa.",
+  },
+  {
+    href: "/veiculos",
+    title: "Veículos presentes",
+    description: "Lista em tempo real de quem está estacionado agora.",
+  },
+  {
+    href: "/veiculos/cadastro",
+    title: "Cadastro de veículo",
+    description: "Cadastrar um novo veículo antes da primeira entrada.",
+  },
+  {
+    href: "/veiculos/historico",
+    title: "Histórico",
+    description: "Consultar as permanências passadas de um veículo.",
+  },
+];
+
+export default function HomePage() {
+  return (
+    <div className={styles.container}>
+      <h1>Sistema de Estacionamento</h1>
+      <p className={styles.subtitle}>O que você precisa fazer?</p>
+
+      <div className={styles.grid}>
+        {SCREENS.map((screen) => (
+          <Link key={screen.href} href={screen.href} className={styles.card}>
+            <div className={styles.cardTitle}>{screen.title}</div>
+            <div className={styles.cardDescription}>{screen.description}</div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
