@@ -98,8 +98,8 @@ describe("GET /api/v1/vehicles/[plate]/stays", () => {
     expect(responseBody[1].exit_time).not.toBeNull();
     expect(responseBody[1].duration_in_seconds).toBeGreaterThanOrEqual(0);
 
-    expect(
-      Date.parse(responseBody[0].entry_time),
-    ).toBeGreaterThan(Date.parse(responseBody[1].entry_time));
+    expect(Date.parse(responseBody[0].entry_time)).toBeGreaterThan(
+      Date.parse(responseBody[1].entry_time),
+    );
   });
 });
