@@ -32,6 +32,9 @@ const availableFeatures = [
   "create:stay",
   "read:stay",
   "update:stay",
+
+  // DASHBOARD
+  "read:dashboard",
 ];
 
 const collaboratorFeatures = [
@@ -45,7 +48,12 @@ const collaboratorFeatures = [
   "update:stay",
 ];
 
-const adminFeatures = [...collaboratorFeatures, "create:user", "read:user"];
+const adminFeatures = [
+  ...collaboratorFeatures,
+  "create:user",
+  "read:user",
+  "read:dashboard",
+];
 function can(user, feature, resource) {
   validateUser(user);
   validateFeature(feature);
