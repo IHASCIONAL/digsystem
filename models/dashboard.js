@@ -186,8 +186,48 @@ async function getCollaboratorActivity() {
     .sort((a, b) => b.vehicles_registered - a.vehicles_registered);
 }
 
+const SEED_VEHICLE_COUNT = 20;
+
+async function seedDevelopmentData(createdBy) {
+  await database.query({
+    text: `
+      WITH new_vehicles AS (
+        INSERT INTO vehicles (plate, created_by)
+        SELECT
+          'DV' || UPPER(SUBSTR(MD5(RANDOM()::text || seq::text), 1, 5)),
+          $1
+        FROM generate_series(1, ${SEED_VEHICLE_COUNT}) AS seq
+        RETURNING id
+      ),
+      new_stays AS (
+        SELECT
+          id AS vehicle_id,
+          NOW()
+            - (RANDOM() * 29 || ' days')::interval
+            - (RANDOM() * 23 || ' hours')::interval AS entry_time,
+          RANDOM() < 0.85 AS should_close
+        FROM new_vehicles
+      )
+      INSERT INTO stays (vehicle_id, entry_time, exit_time, checked_in_by, checked_out_by)
+      SELECT
+        vehicle_id,
+        entry_time,
+        CASE
+          WHEN should_close THEN entry_time + (RANDOM() * 4 || ' hours')::interval
+          ELSE NULL
+        END,
+        $1,
+        CASE WHEN should_close THEN $1 ELSE NULL END
+      FROM new_stays
+      ;
+    `,
+    values: [createdBy],
+  });
+}
+
 const dashboard = {
   getSummary,
+  seedDevelopmentData,
 };
 
 export default dashboard;

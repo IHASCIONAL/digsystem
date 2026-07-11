@@ -1,6 +1,9 @@
+import { useState } from "react";
 import useSWR from "swr";
 import { useCurrentUser } from "lib/useCurrentUser.js";
 import styles from "./index.module.css";
+
+const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 
 const CHART_WIDTH = 880;
 const CHART_HEIGHT = 220;
@@ -15,10 +18,22 @@ async function fetchAPI(key) {
 
 export default function DashboardPage() {
   const { user, isLoading: isLoadingUser } = useCurrentUser();
-  const { data, isLoading: isLoadingSummary } = useSWR(
+  const {
+    data,
+    isLoading: isLoadingSummary,
+    mutate,
+  } = useSWR(
     user?.features?.includes("read:dashboard") ? "/api/v1/dashboard" : null,
     fetchAPI,
   );
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  async function handleSeed() {
+    setIsSeeding(true);
+    await fetch("/api/v1/dashboard/seed", { method: "POST" });
+    await mutate();
+    setIsSeeding(false);
+  }
 
   if (isLoadingUser) {
     return (
@@ -52,6 +67,17 @@ export default function DashboardPage() {
   return (
     <div className={styles.container}>
       <h1>Dashboard</h1>
+
+      {IS_DEVELOPMENT && (
+        <button
+          type="button"
+          onClick={handleSeed}
+          disabled={isSeeding}
+          className={styles.seedButton}
+        >
+          {isSeeding ? "Gerando..." : "Gerar dados de teste (dev)"}
+        </button>
+      )}
 
       <div className={styles.statRow}>
         <StatTile label="Veículos cadastrados" value={data.total_vehicles} />
