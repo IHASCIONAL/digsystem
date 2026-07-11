@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import useSWR from "swr";
 import { useCurrentUser } from "lib/useCurrentUser.js";
+import { formatCentsAsCurrency } from "lib/formatCurrency.js";
 import styles from "./index.module.css";
 
 const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
@@ -77,70 +78,91 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.container}>
-      <h1>Dashboard</h1>
-
-      {IS_DEVELOPMENT && (
-        <button
-          type="button"
-          onClick={handleSeed}
-          disabled={isSeeding}
-          className={styles.seedButton}
-        >
-          {isSeeding ? "Gerando..." : "Gerar dados de teste (dev)"}
-        </button>
-      )}
-
-      <div className={styles.statRow}>
-        <StatTile label="Veículos cadastrados" value={data.total_vehicles} />
-        <StatTile label="Estacionados agora" value={data.currently_parked} />
-      </div>
-
-      <div className={styles.chartCard}>
-        <div className={styles.chartHeader}>
-          <h2>Horários de pico</h2>
-          <div className={styles.dateFilter}>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(event) => setSelectedDate(event.target.value)}
-            />
-            {selectedDate && (
-              <button
-                type="button"
-                className={styles.clearFilterButton}
-                onClick={() => setSelectedDate("")}
-              >
-                Ver todo o período
-              </button>
-            )}
-          </div>
+      <div className={styles.header}>
+        <div>
+          <h1>Dashboard</h1>
+          <p className={styles.subtitle}>
+            Visão geral do estacionamento e da atividade da equipe.
+          </p>
         </div>
-        {selectedDate && isLoadingPeakHoursByDate ? (
-          <p>Carregando...</p>
-        ) : (
-          <BarChart
-            data={peakHoursSource.map((entry) => ({
-              label: String(entry.hour),
-              value: entry.count,
-            }))}
-            showLabelEvery={3}
-          />
+
+        {IS_DEVELOPMENT && (
+          <button
+            type="button"
+            onClick={handleSeed}
+            disabled={isSeeding}
+            className={styles.seedButton}
+          >
+            {isSeeding ? "Gerando..." : "Gerar dados de teste (dev)"}
+          </button>
         )}
       </div>
 
-      <div className={styles.chartCard}>
-        <h2>Melhores dias da semana</h2>
-        <BarChart
-          data={data.busiest_weekdays.map((entry) => ({
-            label: entry.label.slice(0, 3),
-            value: entry.count,
-          }))}
-          showLabelEvery={1}
+      <div className={styles.statGrid}>
+        <StatTile label="Veículos cadastrados" value={data.total_vehicles} />
+        <StatTile label="Estacionados agora" value={data.currently_parked} />
+        <StatTile
+          label="Receita hoje"
+          value={formatCentsAsCurrency(data.revenue.today_cents)}
+          accent
+        />
+        <StatTile
+          label="Receita total"
+          value={formatCentsAsCurrency(data.revenue.total_cents)}
+          accent
         />
       </div>
 
+      <h2 className={styles.sectionTitle}>Operação</h2>
+      <div className={styles.chartGrid}>
+        <div className={styles.chartCard}>
+          <div className={styles.chartHeader}>
+            <h3>Horários de pico</h3>
+            <div className={styles.dateFilter}>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+              />
+              {selectedDate && (
+                <button
+                  type="button"
+                  className={styles.clearFilterButton}
+                  onClick={() => setSelectedDate("")}
+                >
+                  Ver todo o período
+                </button>
+              )}
+            </div>
+          </div>
+          {selectedDate && isLoadingPeakHoursByDate ? (
+            <p>Carregando...</p>
+          ) : (
+            <BarChart
+              data={peakHoursSource.map((entry) => ({
+                label: String(entry.hour),
+                value: entry.count,
+              }))}
+              showLabelEvery={3}
+            />
+          )}
+        </div>
+
+        <div className={styles.chartCard}>
+          <h3>Melhores dias da semana</h3>
+          <BarChart
+            data={data.busiest_weekdays.map((entry) => ({
+              label: entry.label.slice(0, 3),
+              value: entry.count,
+            }))}
+            showLabelEvery={1}
+          />
+        </div>
+      </div>
+
+      <h2 className={styles.sectionTitle}>Tendência</h2>
       <div className={styles.chartCard}>
-        <h2>Entradas nos últimos 30 dias</h2>
+        <h3>Entradas nos últimos 30 dias</h3>
         <LineChart
           data={data.daily_stays.map((entry) => ({
             label: entry.date,
@@ -149,8 +171,8 @@ export default function DashboardPage() {
         />
       </div>
 
+      <h2 className={styles.sectionTitle}>Equipe</h2>
       <div className={styles.chartCard}>
-        <h2>Atividade por colaborador</h2>
         {data.collaborator_activity.length === 0 ? (
           <p className={styles.empty}>Nenhuma atividade registrada ainda.</p>
         ) : (
@@ -161,6 +183,7 @@ export default function DashboardPage() {
                 <th>Veículos cadastrados</th>
                 <th>Check-ins</th>
                 <th>Check-outs</th>
+                <th>Receita gerada</th>
               </tr>
             </thead>
             <tbody>
@@ -170,6 +193,7 @@ export default function DashboardPage() {
                   <td>{activity.vehicles_registered}</td>
                   <td>{activity.check_ins}</td>
                   <td>{activity.check_outs}</td>
+                  <td>{formatCentsAsCurrency(activity.revenue_cents)}</td>
                 </tr>
               ))}
             </tbody>
@@ -180,9 +204,13 @@ export default function DashboardPage() {
   );
 }
 
-function StatTile({ label, value }) {
+function StatTile({ label, value, accent }) {
   return (
-    <div className={styles.statTile}>
+    <div
+      className={
+        accent ? `${styles.statTile} ${styles.statTileAccent}` : styles.statTile
+      }
+    >
       <div className={styles.statLabel}>{label}</div>
       <div className={styles.statValue}>{value}</div>
     </div>

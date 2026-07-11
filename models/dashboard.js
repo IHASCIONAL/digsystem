@@ -1,6 +1,7 @@
 import database from "infra/database.js";
 import password from "models/password.js";
 import authorization from "models/authorization.js";
+import settings from "models/settings.js";
 import { ValidationError } from "infra/errors.js";
 
 const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -21,6 +22,7 @@ async function getSummary() {
   const [
     totalVehicles,
     currentlyParked,
+    revenue,
     peakHours,
     busiestWeekdays,
     dailyStays,
@@ -28,6 +30,7 @@ async function getSummary() {
   ] = await Promise.all([
     countTotalVehicles(),
     countCurrentlyParked(),
+    getRevenueSummary(),
     getPeakHours(),
     getBusiestWeekdays(),
     getDailyStays(),
@@ -37,10 +40,33 @@ async function getSummary() {
   return {
     total_vehicles: totalVehicles,
     currently_parked: currentlyParked,
+    revenue,
     peak_hours: peakHours,
     busiest_weekdays: busiestWeekdays,
     daily_stays: dailyStays,
     collaborator_activity: collaboratorActivity,
+  };
+}
+
+async function getRevenueSummary() {
+  const [totalResult, todayResult] = await Promise.all([
+    database.query(`
+      SELECT COALESCE(SUM(price_cents), 0)::int AS total
+      FROM stays
+      WHERE exit_time IS NOT NULL
+      ;
+    `),
+    database.query(`
+      SELECT COALESCE(SUM(price_cents), 0)::int AS total
+      FROM stays
+      WHERE exit_time IS NOT NULL AND DATE(exit_time) = CURRENT_DATE
+      ;
+    `),
+  ]);
+
+  return {
+    total_cents: totalResult.rows[0].total,
+    today_cents: todayResult.rows[0].total,
   };
 }
 
@@ -155,29 +181,37 @@ function toDateKey(date) {
 }
 
 async function getCollaboratorActivity() {
-  const [vehiclesByUser, checkInsByUser, checkOutsByUser] = await Promise.all([
-    database.query(`
+  const [vehiclesByUser, checkInsByUser, checkOutsByUser, revenueByUser] =
+    await Promise.all([
+      database.query(`
       SELECT created_by AS user_id, COUNT(*)::int AS count
       FROM vehicles
       WHERE created_by IS NOT NULL
       GROUP BY created_by
       ;
     `),
-    database.query(`
+      database.query(`
       SELECT checked_in_by AS user_id, COUNT(*)::int AS count
       FROM stays
       WHERE checked_in_by IS NOT NULL
       GROUP BY checked_in_by
       ;
     `),
-    database.query(`
+      database.query(`
       SELECT checked_out_by AS user_id, COUNT(*)::int AS count
       FROM stays
       WHERE checked_out_by IS NOT NULL
       GROUP BY checked_out_by
       ;
     `),
-  ]);
+      database.query(`
+      SELECT checked_out_by AS user_id, COALESCE(SUM(price_cents), 0)::int AS count
+      FROM stays
+      WHERE checked_out_by IS NOT NULL AND exit_time IS NOT NULL
+      GROUP BY checked_out_by
+      ;
+    `),
+    ]);
 
   const activityByUserId = new Map();
 
@@ -187,6 +221,7 @@ async function getCollaboratorActivity() {
         vehicles_registered: 0,
         check_ins: 0,
         check_outs: 0,
+        revenue_cents: 0,
       };
       current[field] = row.count;
       activityByUserId.set(row.user_id, current);
@@ -196,6 +231,7 @@ async function getCollaboratorActivity() {
   addCounts(vehiclesByUser.rows, "vehicles_registered");
   addCounts(checkInsByUser.rows, "check_ins");
   addCounts(checkOutsByUser.rows, "check_outs");
+  addCounts(revenueByUser.rows, "revenue_cents");
 
   const userIds = Array.from(activityByUserId.keys());
   if (userIds.length === 0) {
@@ -223,7 +259,10 @@ const SEED_VEHICLE_COUNT = 20;
 const SEED_COLLABORATOR_NAMES = ["ana", "bruno", "carla", "diego"];
 
 async function seedDevelopmentData(triggeredBy) {
-  const fakeCollaboratorIds = await createFakeCollaborators();
+  const [fakeCollaboratorIds, dailyRateCents] = await Promise.all([
+    createFakeCollaborators(),
+    settings.getDailyRateCents(),
+  ]);
   const actorPool = [triggeredBy, ...fakeCollaboratorIds];
 
   await database.query({
@@ -247,7 +286,7 @@ async function seedDevelopmentData(triggeredBy) {
           ($1::uuid[])[1 + FLOOR(RANDOM() * ARRAY_LENGTH($1::uuid[], 1))::int] AS check_out_actor
         FROM new_vehicles
       )
-      INSERT INTO stays (vehicle_id, entry_time, exit_time, checked_in_by, checked_out_by)
+      INSERT INTO stays (vehicle_id, entry_time, exit_time, checked_in_by, checked_out_by, price_cents)
       SELECT
         vehicle_id,
         entry_time,
@@ -256,11 +295,12 @@ async function seedDevelopmentData(triggeredBy) {
           ELSE NULL
         END,
         check_in_actor,
-        CASE WHEN should_close THEN check_out_actor ELSE NULL END
+        CASE WHEN should_close THEN check_out_actor ELSE NULL END,
+        $2
       FROM new_stays
       ;
     `,
-    values: [actorPool],
+    values: [actorPool, dailyRateCents],
   });
 }
 

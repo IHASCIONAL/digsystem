@@ -82,6 +82,11 @@ describe("GET /api/v1/dashboard", () => {
     expect(responseBody.total_vehicles).toBe(1);
     expect(responseBody.currently_parked).toBe(0);
 
+    expect(responseBody.revenue).toEqual({
+      total_cents: 2500,
+      today_cents: 2500,
+    });
+
     expect(responseBody.peak_hours).toHaveLength(24);
     const totalPeakHourCount = responseBody.peak_hours.reduce(
       (sum, entry) => sum + entry.count,
@@ -110,6 +115,7 @@ describe("GET /api/v1/dashboard", () => {
         vehicles_registered: 1,
         check_ins: 1,
         check_outs: 1,
+        revenue_cents: 2500,
       },
     ]);
   });
