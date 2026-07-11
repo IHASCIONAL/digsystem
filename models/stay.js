@@ -136,10 +136,39 @@ function calculateElapsedInSeconds(parkedStay) {
   return Math.round(elapsedMilliseconds / 1000);
 }
 
+async function findAllByVehicleId(vehicleId) {
+  const results = await runSelectQuery(vehicleId);
+
+  return results.rows.map((pastStay) => ({
+    ...pastStay,
+    duration_in_seconds: pastStay.exit_time
+      ? calculateDurationInSeconds(pastStay)
+      : null,
+  }));
+
+  async function runSelectQuery(vehicleId) {
+    return database.query({
+      text: `
+        SELECT
+          *
+        FROM
+          stays
+        WHERE
+          vehicle_id = $1
+        ORDER BY
+          entry_time DESC
+        ;
+        `,
+      values: [vehicleId],
+    });
+  }
+}
+
 const stay = {
   create,
   close,
   findAllParked,
+  findAllByVehicleId,
 };
 
 export default stay;
