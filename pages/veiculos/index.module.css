@@ -2,27 +2,31 @@
   max-width: 720px;
   margin: 2rem auto;
   padding: 0 1rem;
-  font-family: system-ui, sans-serif;
+}
+
+.container h1 {
+  color: var(--color-primary-darker);
 }
 
 .empty {
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  background: var(--color-surface);
 }
 
 .table th,
 .table td {
   text-align: left;
-  padding: 0.5rem;
-  border-bottom: 1px solid #eee;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .table th {
-  color: #666;
+  color: var(--color-primary-dark);
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;

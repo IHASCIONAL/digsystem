@@ -27,8 +27,7 @@ const SCREENS = [
 export default function HomePage() {
   return (
     <div className={styles.container}>
-      <h1>Sistema de Estacionamento</h1>
-      <p className={styles.subtitle}>O que você precisa fazer?</p>
+      <h1>O que você precisa fazer?</h1>
 
       <div className={styles.grid}>
         {SCREENS.map((screen) => (
