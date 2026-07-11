@@ -61,6 +61,7 @@ describe("PATCH /api/v1/stays", () => {
       exit_time: responseBody.exit_time,
       checked_in_by: collaborator.id,
       checked_out_by: collaborator.id,
+      price_cents: 2500,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
       duration_in_seconds: responseBody.duration_in_seconds,

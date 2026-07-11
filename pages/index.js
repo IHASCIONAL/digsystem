@@ -54,6 +54,11 @@ const ADMIN_SCREENS = [
     title: "Colaboradores cadastrados",
     description: "Ver e editar o perfil de qualquer colaborador.",
   },
+  {
+    href: "/configuracoes",
+    title: "Configurações",
+    description: "Definir o valor da diária cobrada dos clientes.",
+  },
 ];
 
 export default function HomePage() {

@@ -1,21 +1,23 @@
 import database from "infra/database.js";
+import settings from "models/settings.js";
 import { ValidationError, NotFoundError } from "infra/errors";
 
 async function create(vehicleId, checkedInBy) {
   await validateVehicleNotParked(vehicleId);
 
-  const newStay = await runInsertQuery(vehicleId, checkedInBy);
+  const priceCents = await settings.getDailyRateCents();
+  const newStay = await runInsertQuery(vehicleId, checkedInBy, priceCents);
   return newStay;
 
-  async function runInsertQuery(vehicleId, checkedInBy) {
+  async function runInsertQuery(vehicleId, checkedInBy, priceCents) {
     const results = await database.query({
       text: `
-        INSERT INTO stays (vehicle_id, checked_in_by)
-        VALUES ($1, $2)
+        INSERT INTO stays (vehicle_id, checked_in_by, price_cents)
+        VALUES ($1, $2, $3)
         RETURNING *
         ;
         `,
-      values: [vehicleId, checkedInBy],
+      values: [vehicleId, checkedInBy, priceCents],
     });
     return results.rows[0];
   }

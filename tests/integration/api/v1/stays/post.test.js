@@ -53,6 +53,7 @@ describe("POST /api/v1/stays", () => {
       exit_time: null,
       checked_in_by: collaborator.id,
       checked_out_by: null,
+      price_cents: 2500,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
     });
