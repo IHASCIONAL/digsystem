@@ -136,7 +136,9 @@ async function findOneByEmail(email) {
 
 async function create(userInputValues) {
   await validateUniqueUsername(userInputValues.username);
-  await validateUniqueEmail(userInputValues.email);
+  if (userInputValues.email) {
+    await validateUniqueEmail(userInputValues.email);
+  }
   await hashPasswordInObject(userInputValues);
   injectDefaultFeaturesInObject(userInputValues);
 
@@ -208,8 +210,8 @@ async function validateUniqueEmail(email) {
 async function runInserQuery(userInputValues) {
   const results = await database.query({
     text: `
-              INSERT INTO users (username, email, password, features) 
-              VALUES ($1, $2, $3, $4)
+              INSERT INTO users (username, email, password, features, full_name, cpf, phone)
+              VALUES ($1, $2, $3, $4, $5, $6, $7)
               RETURNING *
               ;
               `,
@@ -218,6 +220,9 @@ async function runInserQuery(userInputValues) {
       userInputValues.email,
       userInputValues.password,
       userInputValues.features,
+      userInputValues.full_name,
+      userInputValues.cpf,
+      userInputValues.phone,
     ],
   });
   return results.rows[0];

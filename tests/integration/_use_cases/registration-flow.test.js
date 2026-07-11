@@ -29,7 +29,8 @@ describe("Use case: Admin creates a collaborator, collaborator logs in", () => {
         },
         body: JSON.stringify({
           username: "RegistrationFlow",
-          email: "registration.flow@gmail.com",
+          full_name: "Fluxo De Cadastro",
+          phone: "11999998888",
           password: "RegistrationFlowPassword",
           features: authorization.collaboratorFeatures,
         }),
@@ -57,7 +58,7 @@ describe("Use case: Admin creates a collaborator, collaborator logs in", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: "registration.flow@gmail.com",
+          username: "RegistrationFlow",
           password: "RegistrationFlowPassword",
         }),
       },

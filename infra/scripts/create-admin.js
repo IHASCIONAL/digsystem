@@ -20,12 +20,11 @@ const ADMIN_FEATURES = [
 
 async function main() {
   const username = process.env.ADMIN_USERNAME;
-  const email = process.env.ADMIN_EMAIL;
   const plainPassword = process.env.ADMIN_PASSWORD;
 
-  if (!username || !email || !plainPassword) {
+  if (!username || !plainPassword) {
     console.error(
-      "Defina ADMIN_USERNAME, ADMIN_EMAIL e ADMIN_PASSWORD antes de rodar este script.",
+      "Defina ADMIN_USERNAME e ADMIN_PASSWORD antes de rodar este script.",
     );
     process.exitCode = 1;
     return;
@@ -43,8 +42,8 @@ async function main() {
 
   try {
     const existing = await client.query(
-      "SELECT id FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($2);",
-      [username, email],
+      "SELECT id FROM users WHERE LOWER(username) = LOWER($1);",
+      [username],
     );
 
     if (existing.rowCount > 0) {
@@ -56,9 +55,9 @@ async function main() {
     const hashedPassword = await bcryptjs.hash(plainPassword, rounds);
 
     await client.query(
-      `INSERT INTO users (username, email, password, features)
-       VALUES ($1, $2, $3, $4);`,
-      [username, email, hashedPassword, ADMIN_FEATURES],
+      `INSERT INTO users (username, password, features)
+       VALUES ($1, $2, $3);`,
+      [username, hashedPassword, ADMIN_FEATURES],
     );
 
     console.log(`Admin "${username}" criado com sucesso.`);
