@@ -41,6 +41,11 @@ const ADMIN_SCREENS = [
     title: "Cadastro de colaborador",
     description: "Criar acesso para um novo colaborador.",
   },
+  {
+    href: "/colaboradores/todos",
+    title: "Colaboradores cadastrados",
+    description: "Ver e editar o perfil de qualquer colaborador.",
+  },
 ];
 
 export default function HomePage() {
