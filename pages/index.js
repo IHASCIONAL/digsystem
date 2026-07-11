@@ -29,7 +29,7 @@ export default function HomePage() {
     <div className={styles.container}>
       <h1>O que você precisa fazer?</h1>
 
-      <div className={styles.grid}>
+      <div className={styles.list}>
         {SCREENS.map((screen) => (
           <Link key={screen.href} href={screen.href} className={styles.card}>
             <div className={styles.cardTitle}>{screen.title}</div>
