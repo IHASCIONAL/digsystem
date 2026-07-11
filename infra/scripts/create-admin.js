@@ -16,6 +16,8 @@ const ADMIN_FEATURES = [
   "update:stay",
   "create:user",
   "read:user",
+  "update:user",
+  "update:user:others",
   "read:dashboard",
 ];
 

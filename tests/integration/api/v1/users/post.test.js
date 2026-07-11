@@ -89,6 +89,9 @@ describe("POST /api/v1/users", () => {
         id: responseBody.id,
         username: "novocolaborador",
         features: authorization.collaboratorFeatures,
+        full_name: null,
+        cpf: null,
+        phone: null,
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
       });

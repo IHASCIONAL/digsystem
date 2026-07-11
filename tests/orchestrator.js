@@ -57,6 +57,9 @@ async function createUser(userObject = {}) {
     email: userObject.email || faker.internet.email(),
     password: userObject.password || "validpassword",
     features: userObject.features,
+    full_name: userObject.full_name,
+    cpf: userObject.cpf,
+    phone: userObject.phone,
   });
 }
 

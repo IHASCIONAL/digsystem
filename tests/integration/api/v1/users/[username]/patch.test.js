@@ -305,10 +305,87 @@ describe("Privileged user", () => {
       id: defaultUser.id,
       username: "AlteradoPorPrivilegiado",
       features: defaultUser.features,
+      full_name: null,
+      cpf: null,
+      phone: null,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
     });
 
     expect(responseBody.updated_at > responseBody.created_at).toBe(true);
+  });
+});
+
+describe("Admin editing a collaborator's profile fields", () => {
+  test("Sending the same username back does not trigger a false duplicate error", async () => {
+    const admin = await orchestrator.createAdmin({});
+    const adminSession = await orchestrator.createSession(admin.id);
+
+    const collaborator = await orchestrator.createCollaborator({
+      username: "colaboradorPerfil",
+    });
+
+    const response = await fetch(
+      `http://localhost:3000/api/v1/users/${collaborator.username}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `session_id=${adminSession.token}`,
+        },
+        body: JSON.stringify({
+          username: collaborator.username,
+          full_name: "Nome Completo Do Colaborador",
+          cpf: "123.456.789-00",
+          phone: "11912345678",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+
+    expect(responseBody).toEqual({
+      id: collaborator.id,
+      username: collaborator.username,
+      features: collaborator.features,
+      full_name: "Nome Completo Do Colaborador",
+      cpf: "123.456.789-00",
+      phone: "11912345678",
+      created_at: responseBody.created_at,
+      updated_at: responseBody.updated_at,
+    });
+  });
+
+  test("Clearing an optional field sets it back to null", async () => {
+    const admin = await orchestrator.createAdmin({});
+    const adminSession = await orchestrator.createSession(admin.id);
+
+    const collaborator = await orchestrator.createCollaborator({
+      full_name: "Nome A Ser Removido",
+    });
+
+    const response = await fetch(
+      `http://localhost:3000/api/v1/users/${collaborator.username}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `session_id=${adminSession.token}`,
+        },
+        body: JSON.stringify({
+          username: collaborator.username,
+          full_name: null,
+          cpf: null,
+          phone: null,
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+    expect(responseBody.full_name).toBeNull();
   });
 });

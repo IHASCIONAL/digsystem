@@ -52,6 +52,8 @@ const adminFeatures = [
   ...collaboratorFeatures,
   "create:user",
   "read:user",
+  "update:user",
+  "update:user:others",
   "read:dashboard",
 ];
 function can(user, feature, resource) {
@@ -78,13 +80,21 @@ function filterOutput(user, feature, resource) {
   validateFeature(feature);
   validateResource(resource);
   if (feature === "read:user") {
-    return {
+    const output = {
       id: resource.id,
       username: resource.username,
       features: resource.features,
       created_at: resource.created_at,
       updated_at: resource.updated_at,
     };
+
+    if (can(user, "update:user:others")) {
+      output.full_name = resource.full_name;
+      output.cpf = resource.cpf;
+      output.phone = resource.phone;
+    }
+
+    return output;
   }
   if (feature === "read:user:self") {
     if (user.id === resource.id) {
