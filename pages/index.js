@@ -32,6 +32,11 @@ const SCREENS = [
 
 const ADMIN_SCREENS = [
   {
+    href: "/dashboard",
+    title: "Dashboard",
+    description: "Visão geral do estacionamento e atividade dos colaboradores.",
+  },
+  {
     href: "/colaboradores/cadastro",
     title: "Cadastro de colaborador",
     description: "Criar acesso para um novo colaborador.",
