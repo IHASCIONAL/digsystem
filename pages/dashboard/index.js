@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import useSWR from "swr";
 import { useCurrentUser } from "lib/useCurrentUser.js";
 import styles from "./index.module.css";
@@ -27,6 +27,12 @@ export default function DashboardPage() {
     fetchAPI,
   );
   const [isSeeding, setIsSeeding] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+
+  const { data: peakHoursByDate, isLoading: isLoadingPeakHoursByDate } = useSWR(
+    selectedDate ? `/api/v1/dashboard/peak-hours?date=${selectedDate}` : null,
+    fetchAPI,
+  );
 
   async function handleSeed() {
     setIsSeeding(true);
@@ -64,6 +70,11 @@ export default function DashboardPage() {
     );
   }
 
+  const peakHoursSource =
+    selectedDate && peakHoursByDate
+      ? peakHoursByDate.peak_hours
+      : data.peak_hours;
+
   return (
     <div className={styles.container}>
       <h1>Dashboard</h1>
@@ -85,14 +96,36 @@ export default function DashboardPage() {
       </div>
 
       <div className={styles.chartCard}>
-        <h2>Horários de pico</h2>
-        <BarChart
-          data={data.peak_hours.map((entry) => ({
-            label: String(entry.hour),
-            value: entry.count,
-          }))}
-          showLabelEvery={3}
-        />
+        <div className={styles.chartHeader}>
+          <h2>Horários de pico</h2>
+          <div className={styles.dateFilter}>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(event) => setSelectedDate(event.target.value)}
+            />
+            {selectedDate && (
+              <button
+                type="button"
+                className={styles.clearFilterButton}
+                onClick={() => setSelectedDate("")}
+              >
+                Ver todo o período
+              </button>
+            )}
+          </div>
+        </div>
+        {selectedDate && isLoadingPeakHoursByDate ? (
+          <p>Carregando...</p>
+        ) : (
+          <BarChart
+            data={peakHoursSource.map((entry) => ({
+              label: String(entry.hour),
+              value: entry.count,
+            }))}
+            showLabelEvery={3}
+          />
+        )}
       </div>
 
       <div className={styles.chartCard}>
@@ -195,6 +228,16 @@ function BarChart({ data, showLabelEvery }) {
             >
               <title>{`${entry.label}: ${entry.value}`}</title>
             </path>
+            {entry.value > 0 && (
+              <text
+                className={styles.valueLabel}
+                x={slotCenter}
+                y={y - 4}
+                textAnchor="middle"
+              >
+                {entry.value}
+              </text>
+            )}
             {index % showLabelEvery === 0 && (
               <text
                 className={styles.axisLabel}
@@ -213,6 +256,10 @@ function BarChart({ data, showLabelEvery }) {
 }
 
 function LineChart({ data }) {
+  const svgRef = useRef(null);
+  const [hoverIndex, setHoverIndex] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState(null);
+
   const plotWidth = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
   const plotHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
   const baselineY = CHART_PADDING.top + plotHeight;
@@ -238,46 +285,106 @@ function LineChart({ data }) {
     points.length - 1,
   ]);
 
+  function handleMouseMove(event) {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const scale = CHART_WIDTH / rect.width;
+    const localX = (event.clientX - rect.left) * scale;
+
+    let nearestIndex = 0;
+    let nearestDistance = Infinity;
+    points.forEach((point, index) => {
+      const distance = Math.abs(point.x - localX);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    setHoverIndex(nearestIndex);
+    setTooltipPosition({
+      left: rect.left + points[nearestIndex].x / scale,
+      top: rect.top + points[nearestIndex].y / scale,
+    });
+  }
+
+  function handleMouseLeave() {
+    setHoverIndex(null);
+    setTooltipPosition(null);
+  }
+
+  const hoveredPoint = hoverIndex !== null ? points[hoverIndex] : null;
+
   return (
-    <svg
-      className={styles.chart}
-      viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-      role="img"
-      aria-label="Gráfico de linha"
-    >
-      <line
-        className={styles.gridline}
-        x1={CHART_PADDING.left}
-        y1={baselineY}
-        x2={CHART_WIDTH - CHART_PADDING.right}
-        y2={baselineY}
-      />
-      <path className={styles.areaFill} d={areaPath} />
-      <path className={styles.line} d={linePath} />
-      {points.map((point, index) => (
-        <g key={point.label}>
-          <circle className={styles.point} cx={point.x} cy={point.y} r={4}>
-            <title>{`${point.label}: ${point.value}`}</title>
-          </circle>
-          {labelIndexes.has(index) && (
-            <text
-              className={styles.axisLabel}
-              x={point.x}
-              y={baselineY + 14}
-              textAnchor={
-                index === 0
-                  ? "start"
-                  : index === points.length - 1
-                    ? "end"
-                    : "middle"
+    <div className={styles.chartWrapper}>
+      <svg
+        ref={svgRef}
+        className={styles.chart}
+        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+        role="img"
+        aria-label="Gráfico de linha"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+        <line
+          className={styles.gridline}
+          x1={CHART_PADDING.left}
+          y1={baselineY}
+          x2={CHART_WIDTH - CHART_PADDING.right}
+          y2={baselineY}
+        />
+        <path className={styles.areaFill} d={areaPath} />
+        <path className={styles.line} d={linePath} />
+        {hoveredPoint && (
+          <line
+            className={styles.crosshair}
+            x1={hoveredPoint.x}
+            x2={hoveredPoint.x}
+            y1={CHART_PADDING.top}
+            y2={baselineY}
+          />
+        )}
+        {points.map((point, index) => (
+          <g key={point.label}>
+            <circle
+              className={
+                index === hoverIndex ? styles.pointActive : styles.point
               }
-            >
-              {formatShortDate(point.label)}
-            </text>
-          )}
-        </g>
-      ))}
-    </svg>
+              cx={point.x}
+              cy={point.y}
+              r={index === hoverIndex ? 6 : 4}
+            />
+            {labelIndexes.has(index) && (
+              <text
+                className={styles.axisLabel}
+                x={point.x}
+                y={baselineY + 14}
+                textAnchor={
+                  index === 0
+                    ? "start"
+                    : index === points.length - 1
+                      ? "end"
+                      : "middle"
+                }
+              >
+                {formatShortDate(point.label)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+
+      {hoveredPoint && tooltipPosition && (
+        <div
+          className={styles.tooltip}
+          style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
+        >
+          {formatShortDate(hoveredPoint.label)}: {hoveredPoint.value}
+        </div>
+      )}
+    </div>
   );
 }
 
