@@ -5,10 +5,17 @@ import stay from "models/stay.js";
 
 const router = createRouter();
 
+router.get(getHandler);
 router.post(postHandler);
 router.patch(patchHandler);
 
 export default router.handler(controller.errorHandlers);
+
+async function getHandler(request, response) {
+  const parkedVehicles = await stay.findAllParked();
+
+  return response.status(200).json(parkedVehicles);
+}
 
 async function postHandler(request, response) {
   const { plate } = request.body;
