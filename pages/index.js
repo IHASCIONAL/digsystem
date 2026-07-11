@@ -3,6 +3,11 @@ import styles from "./index.module.css";
 
 const SCREENS = [
   {
+    href: "/veiculos/cadastro",
+    title: "Cadastro de veículo",
+    description: "Cadastrar um novo veículo antes da primeira entrada.",
+  },
+  {
     href: "/veiculos/operacao",
     title: "Entrada e saída",
     description: "Registrar a entrada ou saída de um veículo pela placa.",
@@ -11,11 +16,6 @@ const SCREENS = [
     href: "/veiculos",
     title: "Veículos presentes",
     description: "Lista em tempo real de quem está estacionado agora.",
-  },
-  {
-    href: "/veiculos/cadastro",
-    title: "Cadastro de veículo",
-    description: "Cadastrar um novo veículo antes da primeira entrada.",
   },
   {
     href: "/veiculos/historico",
