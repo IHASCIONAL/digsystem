@@ -1,4 +1,9 @@
 import database from "infra/database.js";
+import password from "models/password.js";
+import authorization from "models/authorization.js";
+import { ValidationError } from "infra/errors.js";
+
+const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const WEEKDAY_LABELS = [
   "Domingo",
@@ -53,15 +58,34 @@ async function countCurrentlyParked() {
   return results.rows[0].count;
 }
 
-async function getPeakHours() {
-  const results = await database.query(`
-    SELECT
-      EXTRACT(HOUR FROM entry_time)::int AS hour,
-      COUNT(*)::int AS count
-    FROM stays
-    GROUP BY hour
-    ;
-  `);
+async function getPeakHours(date) {
+  if (date) {
+    validateDate(date);
+  }
+
+  const results = await database.query(
+    date
+      ? {
+          text: `
+            SELECT
+              EXTRACT(HOUR FROM entry_time)::int AS hour,
+              COUNT(*)::int AS count
+            FROM stays
+            WHERE DATE(entry_time) = $1::date
+            GROUP BY hour
+            ;
+          `,
+          values: [date],
+        }
+      : `
+        SELECT
+          EXTRACT(HOUR FROM entry_time)::int AS hour,
+          COUNT(*)::int AS count
+        FROM stays
+        GROUP BY hour
+        ;
+      `,
+  );
 
   const countByHour = new Map(results.rows.map((row) => [row.hour, row.count]));
 
@@ -69,6 +93,15 @@ async function getPeakHours() {
     hour,
     count: countByHour.get(hour) || 0,
   }));
+}
+
+function validateDate(date) {
+  if (!DATE_FORMAT_REGEX.test(date) || Number.isNaN(Date.parse(date))) {
+    throw new ValidationError({
+      message: "A data informada não é válida.",
+      action: "Informe uma data no formato AAAA-MM-DD.",
+    });
+  }
 }
 
 async function getBusiestWeekdays() {
@@ -187,15 +220,19 @@ async function getCollaboratorActivity() {
 }
 
 const SEED_VEHICLE_COUNT = 20;
+const SEED_COLLABORATOR_NAMES = ["ana", "bruno", "carla", "diego"];
 
-async function seedDevelopmentData(createdBy) {
+async function seedDevelopmentData(triggeredBy) {
+  const fakeCollaboratorIds = await createFakeCollaborators();
+  const actorPool = [triggeredBy, ...fakeCollaboratorIds];
+
   await database.query({
     text: `
       WITH new_vehicles AS (
         INSERT INTO vehicles (plate, created_by)
         SELECT
           'DV' || UPPER(SUBSTR(MD5(RANDOM()::text || seq::text), 1, 5)),
-          $1
+          ($1::uuid[])[1 + FLOOR(RANDOM() * ARRAY_LENGTH($1::uuid[], 1))::int]
         FROM generate_series(1, ${SEED_VEHICLE_COUNT}) AS seq
         RETURNING id
       ),
@@ -205,7 +242,9 @@ async function seedDevelopmentData(createdBy) {
           NOW()
             - (RANDOM() * 29 || ' days')::interval
             - (RANDOM() * 23 || ' hours')::interval AS entry_time,
-          RANDOM() < 0.85 AS should_close
+          RANDOM() < 0.85 AS should_close,
+          ($1::uuid[])[1 + FLOOR(RANDOM() * ARRAY_LENGTH($1::uuid[], 1))::int] AS check_in_actor,
+          ($1::uuid[])[1 + FLOOR(RANDOM() * ARRAY_LENGTH($1::uuid[], 1))::int] AS check_out_actor
         FROM new_vehicles
       )
       INSERT INTO stays (vehicle_id, entry_time, exit_time, checked_in_by, checked_out_by)
@@ -216,17 +255,42 @@ async function seedDevelopmentData(createdBy) {
           WHEN should_close THEN entry_time + (RANDOM() * 4 || ' hours')::interval
           ELSE NULL
         END,
-        $1,
-        CASE WHEN should_close THEN $1 ELSE NULL END
+        check_in_actor,
+        CASE WHEN should_close THEN check_out_actor ELSE NULL END
       FROM new_stays
       ;
     `,
-    values: [createdBy],
+    values: [actorPool],
   });
+}
+
+async function createFakeCollaborators() {
+  const hashedPassword = await password.hash("dev-seed-not-a-real-login");
+
+  const results = await database.query({
+    text: `
+      INSERT INTO users (username, password, features)
+      SELECT
+        'dev_' || name || '_' || SUBSTR(MD5(RANDOM()::text), 1, 4),
+        $1,
+        $2::varchar[]
+      FROM UNNEST($3::text[]) AS name
+      RETURNING id
+      ;
+    `,
+    values: [
+      hashedPassword,
+      authorization.collaboratorFeatures,
+      SEED_COLLABORATOR_NAMES,
+    ],
+  });
+
+  return results.rows.map((row) => row.id);
 }
 
 const dashboard = {
   getSummary,
+  getPeakHours,
   seedDevelopmentData,
 };
 

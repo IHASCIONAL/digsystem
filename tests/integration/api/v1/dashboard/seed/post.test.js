@@ -61,9 +61,23 @@ describe("POST /api/v1/dashboard/seed", () => {
 
     expect(afterBody.total_vehicles).toBe(beforeBody.total_vehicles + 20);
 
-    const adminActivity = afterBody.collaborator_activity.find(
-      (activity) => activity.user_id === admin.id,
+    // The 20 fake vehicles are randomly split across the admin who clicked
+    // and 4 newly created fake collaborators — both are brand new in this
+    // test, so their combined vehicles_registered must add up to exactly 20.
+    const seedActors = afterBody.collaborator_activity.filter(
+      (activity) =>
+        activity.user_id === admin.id || activity.username?.startsWith("dev_"),
     );
-    expect(adminActivity.vehicles_registered).toBe(20);
+    const totalRegisteredBySeedActors = seedActors.reduce(
+      (sum, activity) => sum + activity.vehicles_registered,
+      0,
+    );
+    expect(totalRegisteredBySeedActors).toBe(20);
+
+    const fakeCollaborators = seedActors.filter((activity) =>
+      activity.username?.startsWith("dev_"),
+    );
+    expect(fakeCollaborators.length).toBeGreaterThan(0);
+    expect(fakeCollaborators.length).toBeLessThanOrEqual(4);
   });
 });

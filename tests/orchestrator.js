@@ -97,6 +97,19 @@ async function createVehicle(vehicleObject = {}) {
   }
 }
 
+async function createStayAt(vehicleId, checkedInBy, { entryTime }) {
+  const results = await database.query({
+    text: `
+      INSERT INTO stays (vehicle_id, entry_time, checked_in_by)
+      VALUES ($1, $2, $3)
+      RETURNING *
+      ;
+    `,
+    values: [vehicleId, entryTime, checkedInBy],
+  });
+  return results.rows[0];
+}
+
 async function deleteAllEmails() {
   await fetch(`${emailHttpUrl}/messages`, {
     method: "DELETE",
@@ -141,6 +154,7 @@ const orchestrator = {
   createCollaborator,
   createSession,
   createVehicle,
+  createStayAt,
   deleteAllEmails,
   getLastEmail,
   extractUUID,
