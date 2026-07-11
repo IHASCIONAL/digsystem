@@ -17,8 +17,12 @@ async function getHandler(request, response) {
 }
 
 async function postHandler(request, response) {
+  const userTryingToCreate = request.context.user;
   const vehicleInputValues = request.body;
-  const newVehicle = await vehicle.create(vehicleInputValues);
+  const newVehicle = await vehicle.create(
+    vehicleInputValues,
+    userTryingToCreate.id,
+  );
 
   return response.status(201).json(newVehicle);
 }

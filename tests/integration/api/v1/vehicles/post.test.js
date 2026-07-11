@@ -2,6 +2,7 @@ import orchestrator from "tests/orchestrator.js";
 import { version as uuidVersion } from "uuid";
 import vehicle from "models/vehicle.js";
 
+let collaborator;
 let collaboratorSession;
 
 beforeAll(async () => {
@@ -9,7 +10,7 @@ beforeAll(async () => {
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
 
-  const collaborator = await orchestrator.createCollaborator({});
+  collaborator = await orchestrator.createCollaborator({});
   collaboratorSession = await orchestrator.createSession(collaborator.id);
 });
 
@@ -58,6 +59,7 @@ describe("POST /api/v1/vehicles", () => {
         brand: "Chevrolet",
         color: "Prata",
         notes: "Retrovisor direito arranhado",
+        created_by: collaborator.id,
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
       });
@@ -94,6 +96,7 @@ describe("POST /api/v1/vehicles", () => {
         brand: null,
         color: null,
         notes: null,
+        created_by: collaborator.id,
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
       });

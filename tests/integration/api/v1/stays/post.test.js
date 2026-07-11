@@ -1,6 +1,7 @@
 import orchestrator from "tests/orchestrator.js";
 import { version as uuidVersion } from "uuid";
 
+let collaborator;
 let collaboratorSession;
 
 beforeAll(async () => {
@@ -8,7 +9,7 @@ beforeAll(async () => {
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
 
-  const collaborator = await orchestrator.createCollaborator({});
+  collaborator = await orchestrator.createCollaborator({});
   collaboratorSession = await orchestrator.createSession(collaborator.id);
 });
 
@@ -50,6 +51,8 @@ describe("POST /api/v1/stays", () => {
       vehicle_id: vehicle.id,
       entry_time: responseBody.entry_time,
       exit_time: null,
+      checked_in_by: collaborator.id,
+      checked_out_by: null,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
     });

@@ -1,21 +1,21 @@
 import database from "infra/database.js";
 import { ValidationError, NotFoundError } from "infra/errors";
 
-async function create(vehicleId) {
+async function create(vehicleId, checkedInBy) {
   await validateVehicleNotParked(vehicleId);
 
-  const newStay = await runInsertQuery(vehicleId);
+  const newStay = await runInsertQuery(vehicleId, checkedInBy);
   return newStay;
 
-  async function runInsertQuery(vehicleId) {
+  async function runInsertQuery(vehicleId, checkedInBy) {
     const results = await database.query({
       text: `
-        INSERT INTO stays (vehicle_id)
-        VALUES ($1)
+        INSERT INTO stays (vehicle_id, checked_in_by)
+        VALUES ($1, $2)
         RETURNING *
         ;
         `,
-      values: [vehicleId],
+      values: [vehicleId, checkedInBy],
     });
     return results.rows[0];
   }
@@ -44,28 +44,29 @@ async function validateVehicleNotParked(vehicleId) {
   }
 }
 
-async function close(vehicleId) {
+async function close(vehicleId, checkedOutBy) {
   const openStay = await findOpenByVehicleId(vehicleId);
-  const closedStay = await runUpdateQuery(openStay.id);
+  const closedStay = await runUpdateQuery(openStay.id, checkedOutBy);
 
   return {
     ...closedStay,
     duration_in_seconds: calculateDurationInSeconds(closedStay),
   };
 
-  async function runUpdateQuery(stayId) {
+  async function runUpdateQuery(stayId, checkedOutBy) {
     const results = await database.query({
       text: `
         UPDATE stays
         SET
           exit_time = timezone('utc', now()),
+          checked_out_by = $2,
           updated_at = timezone('utc', now())
         WHERE
           id = $1
         RETURNING *
         ;
         `,
-      values: [stayId],
+      values: [stayId, checkedOutBy],
     });
     return results.rows[0];
   }

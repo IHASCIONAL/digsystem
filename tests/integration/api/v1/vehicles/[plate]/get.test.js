@@ -61,6 +61,7 @@ describe("GET /api/v1/vehicles/[plate]", () => {
       brand: null,
       color: null,
       notes: null,
+      created_by: null,
       created_at: vehicle.created_at.toISOString(),
       updated_at: vehicle.updated_at.toISOString(),
     });

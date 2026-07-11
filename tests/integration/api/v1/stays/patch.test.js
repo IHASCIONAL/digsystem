@@ -1,5 +1,6 @@
 import orchestrator from "tests/orchestrator.js";
 
+let collaborator;
 let collaboratorSession;
 
 beforeAll(async () => {
@@ -7,7 +8,7 @@ beforeAll(async () => {
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
 
-  const collaborator = await orchestrator.createCollaborator({});
+  collaborator = await orchestrator.createCollaborator({});
   collaboratorSession = await orchestrator.createSession(collaborator.id);
 });
 
@@ -58,6 +59,8 @@ describe("PATCH /api/v1/stays", () => {
       vehicle_id: vehicle.id,
       entry_time: responseBody.entry_time,
       exit_time: responseBody.exit_time,
+      checked_in_by: collaborator.id,
+      checked_out_by: collaborator.id,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
       duration_in_seconds: responseBody.duration_in_seconds,

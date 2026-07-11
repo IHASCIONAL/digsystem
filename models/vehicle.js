@@ -3,19 +3,19 @@ import { ValidationError, NotFoundError } from "infra/errors";
 
 const PLATE_FORMAT_REGEX = /^[A-Z]{3}\d[A-Z0-9]\d{2}$/;
 
-async function create(vehicleInputValues) {
+async function create(vehicleInputValues, createdBy) {
   normalizePlateInObject(vehicleInputValues);
   validatePlateFormat(vehicleInputValues.plate);
   await validateUniquePlate(vehicleInputValues.plate);
 
-  const newVehicle = await runInsertQuery(vehicleInputValues);
+  const newVehicle = await runInsertQuery(vehicleInputValues, createdBy);
   return newVehicle;
 
-  async function runInsertQuery(vehicleInputValues) {
+  async function runInsertQuery(vehicleInputValues, createdBy) {
     const results = await database.query({
       text: `
-        INSERT INTO vehicles (plate, model, brand, color, notes, owner_name)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO vehicles (plate, model, brand, color, notes, owner_name, created_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
         ;
         `,
@@ -26,6 +26,7 @@ async function create(vehicleInputValues) {
         vehicleInputValues.color,
         vehicleInputValues.notes,
         vehicleInputValues.owner_name,
+        createdBy,
       ],
     });
     return results.rows[0];
