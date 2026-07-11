@@ -6,6 +6,10 @@
   justify-content: space-between;
 }
 
+.headerAdmin {
+  background: var(--color-admin-darker);
+}
+
 .brand {
   display: inline-block;
   color: white;

@@ -33,28 +33,36 @@ export default function App({ Component, pageProps }) {
   const canRenderPage =
     !isLoading && ((isPublicRoute && !user) || (!isPublicRoute && !!user));
 
+  const isAdmin = user?.features?.includes("create:user");
+
   return (
     <>
       <Head>
-        <title>Sena Park</title>
+        <title>Parar Park</title>
       </Head>
 
-      <header className={styles.header}>
-        <Link href="/" className={styles.brand}>
-          Sena Park
-        </Link>
+      <div className={isAdmin ? "adminAccent" : undefined}>
+        <header
+          className={
+            isAdmin ? `${styles.header} ${styles.headerAdmin}` : styles.header
+          }
+        >
+          <Link href="/" className={styles.brand}>
+            Parar Park
+          </Link>
 
-        {user && (
-          <div className={styles.identity}>
-            <span>{user.username}</span>
-            <button onClick={handleLogout} className={styles.logoutButton}>
-              Sair
-            </button>
-          </div>
-        )}
-      </header>
+          {user && (
+            <div className={styles.identity}>
+              <span>{user.username}</span>
+              <button onClick={handleLogout} className={styles.logoutButton}>
+                Sair
+              </button>
+            </div>
+          )}
+        </header>
 
-      {canRenderPage && <Component {...pageProps} />}
+        {canRenderPage && <Component {...pageProps} />}
+      </div>
     </>
   );
 }

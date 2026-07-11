@@ -39,5 +39,5 @@
 }
 
 .editLink:hover {
-  color: var(--color-primary-darker);
+  color: var(--color-hover-strong);
 }
