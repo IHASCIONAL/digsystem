@@ -61,6 +61,72 @@ async function findOneByPlate(plate) {
   }
 }
 
+async function findAll() {
+  const results = await runSelectQuery();
+  return results.rows;
+
+  async function runSelectQuery() {
+    return database.query({
+      text: `
+        SELECT
+          *
+        FROM
+          vehicles
+        ORDER BY
+          plate ASC
+        ;
+        `,
+    });
+  }
+}
+
+async function update(plate, vehicleInputValues) {
+  const currentVehicle = await findOneByPlate(plate);
+
+  if ("plate" in vehicleInputValues) {
+    normalizePlateInObject(vehicleInputValues);
+
+    if (vehicleInputValues.plate !== currentVehicle.plate) {
+      validatePlateFormat(vehicleInputValues.plate);
+      await validateUniquePlate(vehicleInputValues.plate);
+    }
+  }
+
+  const vehicleWithNewValues = { ...currentVehicle, ...vehicleInputValues };
+  const updatedVehicle = await runUpdateQuery(vehicleWithNewValues);
+  return updatedVehicle;
+
+  async function runUpdateQuery(vehicleWithNewValues) {
+    const results = await database.query({
+      text: `
+        UPDATE vehicles
+        SET
+          plate = $2,
+          owner_name = $3,
+          model = $4,
+          brand = $5,
+          color = $6,
+          notes = $7,
+          updated_at = timezone('utc', now())
+        WHERE
+          id = $1
+        RETURNING *
+        ;
+        `,
+      values: [
+        vehicleWithNewValues.id,
+        vehicleWithNewValues.plate,
+        vehicleWithNewValues.owner_name,
+        vehicleWithNewValues.model,
+        vehicleWithNewValues.brand,
+        vehicleWithNewValues.color,
+        vehicleWithNewValues.notes,
+      ],
+    });
+    return results.rows[0];
+  }
+}
+
 async function validateUniquePlate(plate) {
   const results = await database.query({
     text: `
@@ -99,7 +165,9 @@ function validatePlateFormat(plate) {
 
 const vehicle = {
   create,
+  findAll,
   findOneByPlate,
+  update,
 };
 
 export default vehicle;
