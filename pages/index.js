@@ -8,6 +8,11 @@ const SCREENS = [
     description: "Cadastrar um novo veículo antes da primeira entrada.",
   },
   {
+    href: "/veiculos/todos",
+    title: "Veículos cadastrados",
+    description: "Ver e editar os dados de qualquer veículo cadastrado.",
+  },
+  {
     href: "/veiculos/operacao",
     title: "Entrada e saída",
     description: "Registrar a entrada ou saída de um veículo pela placa.",
