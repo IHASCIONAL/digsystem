@@ -14,14 +14,13 @@ const ADMIN_FEATURES = [
   "create:stay",
   "read:stay",
   "update:stay",
-  "create:shift",
-  "read:shift",
-  "update:shift",
   "create:user",
   "read:user",
   "update:user",
   "update:user:others",
   "read:dashboard",
+  "read:settings",
+  "update:settings",
 ];
 
 async function main() {

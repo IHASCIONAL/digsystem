@@ -15,6 +15,18 @@ describe("POST /api/v1/shifts", () => {
     expect(response.status).toBe(403);
   });
 
+  test("Admin cannot check in (shift tracking is collaborator-only)", async () => {
+    const admin = await orchestrator.createAdmin({});
+    const adminSession = await orchestrator.createSession(admin.id);
+
+    const response = await fetch("http://localhost:3000/api/v1/shifts", {
+      method: "POST",
+      headers: { Cookie: `session_id=${adminSession.token}` },
+    });
+
+    expect(response.status).toBe(403);
+  });
+
   test("Collaborator checks in", async () => {
     const collaborator = await orchestrator.createCollaborator({});
     const collaboratorSession = await orchestrator.createSession(

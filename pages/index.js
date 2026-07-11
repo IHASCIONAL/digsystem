@@ -65,7 +65,7 @@ export default function HomePage() {
     <div className={styles.container}>
       <h1>O que você precisa fazer?</h1>
 
-      <MyShift />
+      {user?.features?.includes("create:shift") && <MyShift />}
 
       <div className={styles.list}>
         {screens.map((screen) => (

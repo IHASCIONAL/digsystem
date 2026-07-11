@@ -40,9 +40,13 @@ const availableFeatures = [
   "create:shift",
   "read:shift",
   "update:shift",
+
+  // SETTINGS
+  "read:settings",
+  "update:settings",
 ];
 
-const collaboratorFeatures = [
+const vehicleAndStayFeatures = [
   "create:session",
   "read:session",
   "create:vehicle",
@@ -51,18 +55,23 @@ const collaboratorFeatures = [
   "create:stay",
   "read:stay",
   "update:stay",
-  "create:shift",
-  "read:shift",
-  "update:shift",
 ];
 
+// Shift check-in/check-out is a collaborator-only routine — admins don't
+// clock in, so this bundle is deliberately not part of adminFeatures below.
+const shiftFeatures = ["create:shift", "read:shift", "update:shift"];
+
+const collaboratorFeatures = [...vehicleAndStayFeatures, ...shiftFeatures];
+
 const adminFeatures = [
-  ...collaboratorFeatures,
+  ...vehicleAndStayFeatures,
   "create:user",
   "read:user",
   "update:user",
   "update:user:others",
   "read:dashboard",
+  "read:settings",
+  "update:settings",
 ];
 function can(user, feature, resource) {
   validateUser(user);
