@@ -3,6 +3,16 @@ import styles from "./index.module.css";
 
 const SCREENS = [
   {
+    href: "/veiculos/cadastro",
+    title: "Cadastro de veículo",
+    description: "Cadastrar um novo veículo antes da primeira entrada.",
+  },
+  {
+    href: "/veiculos/todos",
+    title: "Veículos cadastrados",
+    description: "Ver e editar os dados de qualquer veículo cadastrado.",
+  },
+  {
     href: "/veiculos/operacao",
     title: "Entrada e saída",
     description: "Registrar a entrada ou saída de um veículo pela placa.",
@@ -11,11 +21,6 @@ const SCREENS = [
     href: "/veiculos",
     title: "Veículos presentes",
     description: "Lista em tempo real de quem está estacionado agora.",
-  },
-  {
-    href: "/veiculos/cadastro",
-    title: "Cadastro de veículo",
-    description: "Cadastrar um novo veículo antes da primeira entrada.",
   },
   {
     href: "/veiculos/historico",
@@ -27,10 +32,9 @@ const SCREENS = [
 export default function HomePage() {
   return (
     <div className={styles.container}>
-      <h1>Sistema de Estacionamento</h1>
-      <p className={styles.subtitle}>O que você precisa fazer?</p>
+      <h1>O que você precisa fazer?</h1>
 
-      <div className={styles.grid}>
+      <div className={styles.list}>
         {SCREENS.map((screen) => (
           <Link key={screen.href} href={screen.href} className={styles.card}>
             <div className={styles.cardTitle}>{screen.title}</div>

@@ -1,0 +1,17 @@
+.header {
+  background: var(--color-primary-darker);
+  padding: 0.85rem 1.5rem;
+}
+
+.brand {
+  display: inline-block;
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.brand:hover {
+  color: #cfe0ff;
+}

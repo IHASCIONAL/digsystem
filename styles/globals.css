@@ -1,0 +1,23 @@
+:root {
+  --color-primary: #0033a0;
+  --color-primary-dark: #002266;
+  --color-primary-darker: #00143d;
+  --color-bg: #f5f8fc;
+  --color-surface: #ffffff;
+  --color-border: #d5e0f0;
+  --color-text: #16233d;
+  --color-text-muted: #5b6b85;
+  --color-success: #1a7f37;
+  --color-error: #c0392b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}

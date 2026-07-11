@@ -1,20 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import styles from "./index.module.css";
-
-const EMPTY_FORM_VALUES = {
-  plate: "",
-  owner_name: "",
-  model: "",
-  brand: "",
-  color: "",
-  notes: "",
-};
 
 const OPTIONAL_FIELDS = ["owner_name", "model", "brand", "color", "notes"];
 
-export default function VehicleRegistrationPage() {
-  const [formValues, setFormValues] = useState(EMPTY_FORM_VALUES);
-  const [status, setStatus] = useState({ type: "idle" });
+export default function VehicleEditPage() {
+  const router = useRouter();
+  const routePlate =
+    typeof router.query.plate === "string" ? router.query.plate : null;
+
+  const [targetPlate, setTargetPlate] = useState(null);
+  const [formValues, setFormValues] = useState(null);
+  const [status, setStatus] = useState({ type: "loading" });
+
+  useEffect(() => {
+    if (!routePlate) return;
+
+    async function loadVehicle() {
+      const response = await fetch(`/api/v1/vehicles/${routePlate}`);
+      const responseBody = await response.json();
+
+      if (!response.ok) {
+        setStatus({ type: "error", message: responseBody.message });
+        return;
+      }
+
+      setTargetPlate(responseBody.plate);
+      setFormValues({
+        plate: responseBody.plate,
+        owner_name: responseBody.owner_name || "",
+        model: responseBody.model || "",
+        brand: responseBody.brand || "",
+        color: responseBody.color || "",
+        notes: responseBody.notes || "",
+      });
+      setStatus({ type: "idle" });
+    }
+
+    loadVehicle();
+  }, [routePlate]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -25,8 +49,8 @@ export default function VehicleRegistrationPage() {
     event.preventDefault();
     setStatus({ type: "submitting" });
 
-    const response = await fetch("/api/v1/vehicles", {
-      method: "POST",
+    const response = await fetch(`/api/v1/vehicles/${targetPlate}`, {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
@@ -40,17 +64,35 @@ export default function VehicleRegistrationPage() {
       return;
     }
 
-    setStatus({ type: "success", vehicle: responseBody });
-    setFormValues(EMPTY_FORM_VALUES);
+    setTargetPlate(responseBody.plate);
+    setStatus({ type: "success" });
+  }
+
+  if (status.type === "loading") {
+    return (
+      <div className={styles.container}>
+        <h1>Editar veículo</h1>
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+
+  if (status.type === "error" && !formValues) {
+    return (
+      <div className={styles.container}>
+        <h1>Editar veículo</h1>
+        <p className={styles.errorMessage}>{status.message}</p>
+      </div>
+    );
   }
 
   return (
     <div className={styles.container}>
-      <h1>Cadastro de veículo</h1>
+      <h1>Editar veículo</h1>
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <label className={styles.field}>
-          Placa *
+          Placa
           <input
             name="plate"
             value={formValues.plate}
@@ -116,14 +158,12 @@ export default function VehicleRegistrationPage() {
           className={styles.submitButton}
           disabled={status.type === "submitting"}
         >
-          {status.type === "submitting" ? "Cadastrando..." : "Cadastrar"}
+          {status.type === "submitting" ? "Salvando..." : "Salvar"}
         </button>
       </form>
 
       {status.type === "success" && (
-        <p className={styles.success}>
-          Veículo {status.vehicle.plate} cadastrado com sucesso.
-        </p>
+        <p className={styles.success}>Veículo atualizado com sucesso.</p>
       )}
 
       {status.type === "error" && (
@@ -138,9 +178,7 @@ function buildPayload(formValues) {
 
   for (const field of OPTIONAL_FIELDS) {
     const trimmedValue = formValues[field].trim();
-    if (trimmedValue !== "") {
-      payload[field] = trimmedValue;
-    }
+    payload[field] = trimmedValue === "" ? null : trimmedValue;
   }
 
   return payload;
