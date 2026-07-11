@@ -69,6 +69,7 @@ async function createSession(userId) {
 async function createVehicle(vehicleObject = {}) {
   return await vehicle.create({
     plate: vehicleObject.plate || generateRandomPlate(),
+    owner_name: vehicleObject.owner_name,
     model: vehicleObject.model,
     brand: vehicleObject.brand,
     color: vehicleObject.color,

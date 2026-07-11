@@ -14,8 +14,8 @@ async function create(vehicleInputValues) {
   async function runInsertQuery(vehicleInputValues) {
     const results = await database.query({
       text: `
-        INSERT INTO vehicles (plate, model, brand, color, notes)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO vehicles (plate, model, brand, color, notes, owner_name)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
         ;
         `,
@@ -25,6 +25,7 @@ async function create(vehicleInputValues) {
         vehicleInputValues.brand,
         vehicleInputValues.color,
         vehicleInputValues.notes,
+        vehicleInputValues.owner_name,
       ],
     });
     return results.rows[0];

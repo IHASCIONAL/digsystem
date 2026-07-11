@@ -17,6 +17,7 @@ describe("POST /api/v1/vehicles", () => {
       },
       body: JSON.stringify({
         plate: "abc1d23",
+        owner_name: "Maria Souza",
         model: "Onix",
         brand: "Chevrolet",
         color: "Prata",
@@ -31,6 +32,7 @@ describe("POST /api/v1/vehicles", () => {
     expect(responseBody).toEqual({
       id: responseBody.id,
       plate: "ABC1D23",
+      owner_name: "Maria Souza",
       model: "Onix",
       brand: "Chevrolet",
       color: "Prata",
@@ -65,6 +67,7 @@ describe("POST /api/v1/vehicles", () => {
     expect(responseBody).toEqual({
       id: responseBody.id,
       plate: "XYZ9876",
+      owner_name: null,
       model: null,
       brand: null,
       color: null,

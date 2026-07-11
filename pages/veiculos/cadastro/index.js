@@ -3,13 +3,14 @@ import styles from "./index.module.css";
 
 const EMPTY_FORM_VALUES = {
   plate: "",
+  owner_name: "",
   model: "",
   brand: "",
   color: "",
   notes: "",
 };
 
-const OPTIONAL_FIELDS = ["model", "brand", "color", "notes"];
+const OPTIONAL_FIELDS = ["owner_name", "model", "brand", "color", "notes"];
 
 export default function VehicleRegistrationPage() {
   const [formValues, setFormValues] = useState(EMPTY_FORM_VALUES);
@@ -63,6 +64,15 @@ export default function VehicleRegistrationPage() {
           <span className={styles.hint}>
             Formato antigo (ABC1234) ou Mercosul (ABC1D23)
           </span>
+        </label>
+
+        <label className={styles.field}>
+          Nome do responsável
+          <input
+            name="owner_name"
+            value={formValues.owner_name}
+            onChange={handleChange}
+          />
         </label>
 
         <label className={styles.field}>
