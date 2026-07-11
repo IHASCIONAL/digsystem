@@ -1,10 +1,12 @@
 import { useState } from "react";
+import Link from "next/link";
 import { formatElapsedTime } from "lib/formatElapsedTime.js";
 import styles from "./index.module.css";
 
 export default function VehicleOperationPage() {
   const [plate, setPlate] = useState("");
   const [status, setStatus] = useState({ type: "idle" });
+  const [unregisteredPlate, setUnregisteredPlate] = useState(null);
 
   const isSubmitting = status.type === "submitting";
   const isPlateEmpty = plate.trim() === "";
@@ -32,6 +34,12 @@ export default function VehicleOperationPage() {
     const responseBody = await response.json();
 
     if (!response.ok) {
+      if (action === "checkin" && response.status === 404) {
+        setStatus({ type: "idle" });
+        setUnregisteredPlate(submittedPlate);
+        return;
+      }
+
       setStatus({ type: "error", message: responseBody.message });
       return;
     }
@@ -96,6 +104,33 @@ export default function VehicleOperationPage() {
 
       {status.type === "error" && (
         <p className={styles.errorMessage}>{status.message}</p>
+      )}
+
+      {unregisteredPlate && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} role="dialog" aria-modal="true">
+            <h2>Veículo não cadastrado</h2>
+            <p>
+              A placa <strong>{unregisteredPlate}</strong> ainda não está
+              cadastrada. Deseja cadastrá-la agora?
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.modalCancelButton}
+                onClick={() => setUnregisteredPlate(null)}
+              >
+                Cancelar
+              </button>
+              <Link
+                href={`/veiculos/cadastro?plate=${encodeURIComponent(unregisteredPlate)}`}
+                className={styles.modalConfirmButton}
+              >
+                Cadastrar veículo
+              </Link>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

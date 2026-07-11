@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import styles from "./index.module.css";
 
 const EMPTY_FORM_VALUES = {
@@ -13,8 +14,18 @@ const EMPTY_FORM_VALUES = {
 const OPTIONAL_FIELDS = ["owner_name", "model", "brand", "color", "notes"];
 
 export default function VehicleRegistrationPage() {
+  const router = useRouter();
   const [formValues, setFormValues] = useState(EMPTY_FORM_VALUES);
   const [status, setStatus] = useState({ type: "idle" });
+
+  useEffect(() => {
+    if (typeof router.query.plate === "string") {
+      setFormValues((previousValues) => ({
+        ...previousValues,
+        plate: router.query.plate,
+      }));
+    }
+  }, [router.query.plate]);
 
   function handleChange(event) {
     const { name, value } = event.target;
