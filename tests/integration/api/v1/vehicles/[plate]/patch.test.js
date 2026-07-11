@@ -1,18 +1,39 @@
 import orchestrator from "tests/orchestrator.js";
 
+let collaboratorSession;
+
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
+
+  const collaborator = await orchestrator.createCollaborator({});
+  collaboratorSession = await orchestrator.createSession(collaborator.id);
 });
 
 describe("PATCH /api/v1/vehicles/[plate]", () => {
-  test("With a plate that is not registered", async () => {
+  test("Anonymous user cannot edit a vehicle", async () => {
     const response = await fetch(
       "http://localhost:3000/api/v1/vehicles/NOTFOUND1",
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner_name: "Alguém" }),
+      },
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  test("With a plate that is not registered", async () => {
+    const response = await fetch(
+      "http://localhost:3000/api/v1/vehicles/NOTFOUND1",
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `session_id=${collaboratorSession.token}`,
+        },
         body: JSON.stringify({ owner_name: "Alguém" }),
       },
     );
@@ -31,7 +52,10 @@ describe("PATCH /api/v1/vehicles/[plate]", () => {
       `http://localhost:3000/api/v1/vehicles/${vehicle.plate}`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `session_id=${collaboratorSession.token}`,
+        },
         body: JSON.stringify({ color: "Preto" }),
       },
     );
@@ -64,7 +88,10 @@ describe("PATCH /api/v1/vehicles/[plate]", () => {
       `http://localhost:3000/api/v1/vehicles/${vehicle.plate}`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `session_id=${collaboratorSession.token}`,
+        },
         body: JSON.stringify({ plate: "new5d67" }),
       },
     );
@@ -76,6 +103,7 @@ describe("PATCH /api/v1/vehicles/[plate]", () => {
 
     const notFoundResponse = await fetch(
       "http://localhost:3000/api/v1/vehicles/OLD1234",
+      { headers: { Cookie: `session_id=${collaboratorSession.token}` } },
     );
     expect(notFoundResponse.status).toBe(404);
   });
@@ -88,7 +116,10 @@ describe("PATCH /api/v1/vehicles/[plate]", () => {
       `http://localhost:3000/api/v1/vehicles/${vehicle2.plate}`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `session_id=${collaboratorSession.token}`,
+        },
         body: JSON.stringify({ plate: "TKN1111" }),
       },
     );
@@ -113,7 +144,10 @@ describe("PATCH /api/v1/vehicles/[plate]", () => {
       `http://localhost:3000/api/v1/vehicles/${vehicle.plate}`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `session_id=${collaboratorSession.token}`,
+        },
         body: JSON.stringify({ plate: "AB1" }),
       },
     );

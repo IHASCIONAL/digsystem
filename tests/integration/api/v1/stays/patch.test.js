@@ -1,12 +1,29 @@
 import orchestrator from "tests/orchestrator.js";
 
+let collaboratorSession;
+
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
+
+  const collaborator = await orchestrator.createCollaborator({});
+  collaboratorSession = await orchestrator.createSession(collaborator.id);
 });
 
 describe("PATCH /api/v1/stays", () => {
+  test("Anonymous user cannot register a check-out", async () => {
+    const response = await fetch("http://localhost:3000/api/v1/stays", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ plate: "NOTFOUND1" }),
+    });
+
+    expect(response.status).toBe(403);
+  });
+
   test("With a vehicle that is parked", async () => {
     const vehicle = await orchestrator.createVehicle();
 
@@ -14,6 +31,7 @@ describe("PATCH /api/v1/stays", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
@@ -24,6 +42,7 @@ describe("PATCH /api/v1/stays", () => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
@@ -59,6 +78,7 @@ describe("PATCH /api/v1/stays", () => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: "NOTFOUND1",
@@ -84,6 +104,7 @@ describe("PATCH /api/v1/stays", () => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
@@ -110,6 +131,7 @@ describe("PATCH /api/v1/stays", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
@@ -120,6 +142,7 @@ describe("PATCH /api/v1/stays", () => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
@@ -132,6 +155,7 @@ describe("PATCH /api/v1/stays", () => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,

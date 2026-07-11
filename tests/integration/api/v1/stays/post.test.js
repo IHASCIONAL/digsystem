@@ -1,13 +1,32 @@
 import orchestrator from "tests/orchestrator.js";
 import { version as uuidVersion } from "uuid";
 
+let collaboratorSession;
+
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
+
+  const collaborator = await orchestrator.createCollaborator({});
+  collaboratorSession = await orchestrator.createSession(collaborator.id);
 });
 
 describe("POST /api/v1/stays", () => {
+  test("Anonymous user cannot register a check-in", async () => {
+    const vehicle = await orchestrator.createVehicle();
+
+    const response = await fetch("http://localhost:3000/api/v1/stays", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ plate: vehicle.plate }),
+    });
+
+    expect(response.status).toBe(403);
+  });
+
   test("With a registered and available vehicle", async () => {
     const vehicle = await orchestrator.createVehicle();
 
@@ -15,6 +34,7 @@ describe("POST /api/v1/stays", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
@@ -43,6 +63,7 @@ describe("POST /api/v1/stays", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: "NOTFOUND1",
@@ -68,6 +89,7 @@ describe("POST /api/v1/stays", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
@@ -80,6 +102,7 @@ describe("POST /api/v1/stays", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
       },
       body: JSON.stringify({
         plate: vehicle.plate,
