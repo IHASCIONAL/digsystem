@@ -1,8 +1,11 @@
 import database from "infra/database.js";
 import { ValidationError, NotFoundError } from "infra/errors";
 
+const PLATE_FORMAT_REGEX = /^[A-Z]{3}\d[A-Z0-9]\d{2}$/;
+
 async function create(vehicleInputValues) {
   normalizePlateInObject(vehicleInputValues);
+  validatePlateFormat(vehicleInputValues.plate);
   await validateUniquePlate(vehicleInputValues.plate);
 
   const newVehicle = await runInsertQuery(vehicleInputValues);
@@ -80,6 +83,16 @@ async function validateUniquePlate(plate) {
 
 function normalizePlateInObject(vehicleInputValues) {
   vehicleInputValues.plate = vehicleInputValues.plate.trim().toUpperCase();
+}
+
+function validatePlateFormat(plate) {
+  if (!PLATE_FORMAT_REGEX.test(plate)) {
+    throw new ValidationError({
+      message: "A placa informada não é válida.",
+      action:
+        "Informe uma placa no formato antigo (ABC1234) ou Mercosul (ABC1D23).",
+    });
+  }
 }
 
 const vehicle = {

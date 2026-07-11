@@ -74,6 +74,30 @@ describe("POST /api/v1/vehicles", () => {
     });
   });
 
+  test("With an invalid plate format", async () => {
+    const response = await fetch("http://localhost:3000/api/v1/vehicles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        plate: "AB123",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+
+    const responseBody = await response.json();
+
+    expect(responseBody).toEqual({
+      name: "ValidationError",
+      message: "A placa informada não é válida.",
+      action:
+        "Informe uma placa no formato antigo (ABC1234) ou Mercosul (ABC1D23).",
+      status_code: 400,
+    });
+  });
+
   test("With duplicated plate (case insensitive)", async () => {
     const response1 = await fetch("http://localhost:3000/api/v1/vehicles", {
       method: "POST",
