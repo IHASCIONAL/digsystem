@@ -89,14 +89,16 @@ async function findOpenByVehicleId(vehicleId) {
   if (results.rowCount === 0) {
     throw new NotFoundError({
       message: "O veículo não possui uma permanência em aberto.",
-      action: "Verifique se o veículo está estacionado antes de registrar a saída.",
+      action:
+        "Verifique se o veículo está estacionado antes de registrar a saída.",
     });
   }
   return results.rows[0];
 }
 
 function calculateDurationInSeconds(stay) {
-  const elapsedMilliseconds = new Date(stay.exit_time) - new Date(stay.entry_time);
+  const elapsedMilliseconds =
+    new Date(stay.exit_time) - new Date(stay.entry_time);
   return Math.round(elapsedMilliseconds / 1000);
 }
 

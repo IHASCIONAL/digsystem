@@ -76,7 +76,8 @@ async function validateUniquePlate(plate) {
   if (results.rowCount > 0) {
     throw new ValidationError({
       message: "A placa informada já está cadastrada.",
-      action: "Verifique se a placa está correta ou consulte o veículo já existente.",
+      action:
+        "Verifique se a placa está correta ou consulte o veículo já existente.",
     });
   }
 }
