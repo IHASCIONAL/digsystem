@@ -4,8 +4,9 @@ import vehicle from "models/vehicle.js";
 
 const router = createRouter();
 
-router.get(getHandler);
-router.patch(patchHandler);
+router.use(controller.injectAnonymousOrUser);
+router.get(controller.canRequest("read:vehicle"), getHandler);
+router.patch(controller.canRequest("update:vehicle"), patchHandler);
 
 export default router.handler(controller.errorHandlers);
 

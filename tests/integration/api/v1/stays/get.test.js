@@ -1,9 +1,14 @@
 import orchestrator from "tests/orchestrator.js";
 
+let collaboratorSession;
+
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
+
+  const collaborator = await orchestrator.createCollaborator({});
+  collaboratorSession = await orchestrator.createSession(collaborator.id);
 });
 
 async function checkIn(plate) {
@@ -11,6 +16,7 @@ async function checkIn(plate) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Cookie: `session_id=${collaboratorSession.token}`,
     },
     body: JSON.stringify({ plate }),
   });
@@ -21,14 +27,23 @@ async function checkOut(plate) {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
+      Cookie: `session_id=${collaboratorSession.token}`,
     },
     body: JSON.stringify({ plate }),
   });
 }
 
 describe("GET /api/v1/stays", () => {
-  test("With no vehicles parked", async () => {
+  test("Anonymous user cannot list parked vehicles", async () => {
     const response = await fetch("http://localhost:3000/api/v1/stays");
+
+    expect(response.status).toBe(403);
+  });
+
+  test("With no vehicles parked", async () => {
+    const response = await fetch("http://localhost:3000/api/v1/stays", {
+      headers: { Cookie: `session_id=${collaboratorSession.token}` },
+    });
 
     expect(response.status).toBe(200);
 
@@ -44,7 +59,9 @@ describe("GET /api/v1/stays", () => {
     await checkIn(vehicle1.plate);
     await checkIn(vehicle2.plate);
 
-    const response = await fetch("http://localhost:3000/api/v1/stays");
+    const response = await fetch("http://localhost:3000/api/v1/stays", {
+      headers: { Cookie: `session_id=${collaboratorSession.token}` },
+    });
 
     expect(response.status).toBe(200);
 
@@ -78,7 +95,9 @@ describe("GET /api/v1/stays", () => {
     await checkIn(vehicle.plate);
     await checkOut(vehicle.plate);
 
-    const response = await fetch("http://localhost:3000/api/v1/stays");
+    const response = await fetch("http://localhost:3000/api/v1/stays", {
+      headers: { Cookie: `session_id=${collaboratorSession.token}` },
+    });
     const responseBody = await response.json();
 
     const plates = responseBody.map((parkedStay) => parkedStay.plate);

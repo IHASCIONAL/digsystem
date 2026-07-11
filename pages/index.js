@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useCurrentUser } from "lib/useCurrentUser.js";
 import styles from "./index.module.css";
 
 const SCREENS = [
@@ -29,13 +30,25 @@ const SCREENS = [
   },
 ];
 
+const ADMIN_SCREENS = [
+  {
+    href: "/colaboradores/cadastro",
+    title: "Cadastro de colaborador",
+    description: "Criar acesso para um novo colaborador.",
+  },
+];
+
 export default function HomePage() {
+  const { user } = useCurrentUser();
+  const isAdmin = user?.features?.includes("create:user");
+  const screens = isAdmin ? [...SCREENS, ...ADMIN_SCREENS] : SCREENS;
+
   return (
     <div className={styles.container}>
       <h1>O que você precisa fazer?</h1>
 
       <div className={styles.list}>
-        {SCREENS.map((screen) => (
+        {screens.map((screen) => (
           <Link key={screen.href} href={screen.href} className={styles.card}>
             <div className={styles.cardTitle}>{screen.title}</div>
             <div className={styles.cardDescription}>{screen.description}</div>

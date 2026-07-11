@@ -5,6 +5,7 @@ import migrator from "models/migrator.js";
 import user from "models/user.js";
 import session from "models/session";
 import activation from "models/activation.js";
+import authorization from "models/authorization.js";
 import vehicle from "models/vehicle.js";
 
 const emailHttpUrl = `http://${process.env.EMAIL_HTTP_HOST}:${process.env.EMAIL_HTTP_PORT}`;
@@ -55,6 +56,21 @@ async function createUser(userObject = {}) {
       userObject.username || faker.internet.username().replace(/[_.-]/g, ""),
     email: userObject.email || faker.internet.email(),
     password: userObject.password || "validpassword",
+    features: userObject.features,
+  });
+}
+
+async function createAdmin(userObject = {}) {
+  return await createUser({
+    ...userObject,
+    features: authorization.adminFeatures,
+  });
+}
+
+async function createCollaborator(userObject = {}) {
+  return await createUser({
+    ...userObject,
+    features: authorization.collaboratorFeatures,
   });
 }
 
@@ -121,6 +137,8 @@ const orchestrator = {
   clearDatabase,
   runPendingMigrations,
   createUser,
+  createAdmin,
+  createCollaborator,
   createSession,
   createVehicle,
   deleteAllEmails,

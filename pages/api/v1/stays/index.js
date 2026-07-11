@@ -5,9 +5,10 @@ import stay from "models/stay.js";
 
 const router = createRouter();
 
-router.get(getHandler);
-router.post(postHandler);
-router.patch(patchHandler);
+router.use(controller.injectAnonymousOrUser);
+router.get(controller.canRequest("read:stay"), getHandler);
+router.post(controller.canRequest("create:stay"), postHandler);
+router.patch(controller.canRequest("update:stay"), patchHandler);
 
 export default router.handler(controller.errorHandlers);
 

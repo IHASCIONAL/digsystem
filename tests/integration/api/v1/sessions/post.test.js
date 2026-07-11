@@ -11,7 +11,34 @@ beforeAll(async () => {
 
 describe("POST /api/v1/sessions", () => {
   describe("Anonymous user", () => {
-    test("With correct email, but incorrect password", async () => {
+    test("With correct username, but incorrect password", async () => {
+      const createdUser = await orchestrator.createUser({
+        password: "senha-correta",
+      });
+      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: createdUser.username,
+          password: "senha-incorreta",
+        }),
+      });
+
+      expect(response.status).toBe(401);
+
+      const responseBody = await response.json();
+
+      expect(responseBody).toEqual({
+        name: "UnauthorizedError",
+        message: "Dados de autenticação não conferem.",
+        action: "Verifique se os dados enviados estão corretos.",
+        status_code: 401,
+      });
+    });
+
+    test("With incorrect username, but correct password", async () => {
       await orchestrator.createUser({
         password: "senha-correta",
       });
@@ -21,7 +48,7 @@ describe("POST /api/v1/sessions", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: "email-errado@gmail.com",
+          username: "usuario-inexistente",
           password: "senha-correta",
         }),
       });
@@ -38,34 +65,7 @@ describe("POST /api/v1/sessions", () => {
       });
     });
 
-    test("With incorrect email, but correct password", async () => {
-      await orchestrator.createUser({
-        email: "email.correto@gmail.com",
-      });
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "email.correto@gmail.com",
-          password: "senha-incorreta",
-        }),
-      });
-
-      expect(response.status).toBe(401);
-
-      const responseBody = await response.json();
-
-      expect(responseBody).toEqual({
-        name: "UnauthorizedError",
-        message: "Dados de autenticação não conferem.",
-        action: "Verifique se os dados enviados estão corretos.",
-        status_code: 401,
-      });
-    });
-
-    test("With incorrect email and incorrect password", async () => {
+    test("With incorrect username and incorrect password", async () => {
       await orchestrator.createUser({});
       const response = await fetch("http://localhost:3000/api/v1/sessions", {
         method: "POST",
@@ -73,7 +73,7 @@ describe("POST /api/v1/sessions", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: "email.incorreto@gmail.com",
+          username: "usuario-incorreto",
           password: "senha-incorreta",
         }),
       });
@@ -90,9 +90,9 @@ describe("POST /api/v1/sessions", () => {
       });
     });
 
-    test("With correct email and correct password", async () => {
+    test("With correct username and correct password", async () => {
       const createdUser = await orchestrator.createUser({
-        email: "tudo.correto@gmail.com",
+        username: "tudoCorreto",
         password: "senha-correta",
       });
 
@@ -104,7 +104,7 @@ describe("POST /api/v1/sessions", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: "tudo.correto@gmail.com",
+          username: "tudoCorreto",
           password: "senha-correta",
         }),
       });
