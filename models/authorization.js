@@ -35,6 +35,11 @@ const availableFeatures = [
 
   // DASHBOARD
   "read:dashboard",
+
+  // SHIFT
+  "create:shift",
+  "read:shift",
+  "update:shift",
 ];
 
 const collaboratorFeatures = [
@@ -46,6 +51,9 @@ const collaboratorFeatures = [
   "create:stay",
   "read:stay",
   "update:stay",
+  "create:shift",
+  "read:shift",
+  "update:shift",
 ];
 
 const adminFeatures = [

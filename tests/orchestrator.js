@@ -113,6 +113,19 @@ async function createStayAt(vehicleId, checkedInBy, { entryTime }) {
   return results.rows[0];
 }
 
+async function createShiftAt(userId, { checkInTime }) {
+  const results = await database.query({
+    text: `
+      INSERT INTO shifts (user_id, check_in_time)
+      VALUES ($1, $2)
+      RETURNING *
+      ;
+    `,
+    values: [userId, checkInTime],
+  });
+  return results.rows[0];
+}
+
 async function deleteAllEmails() {
   await fetch(`${emailHttpUrl}/messages`, {
     method: "DELETE",
@@ -158,6 +171,7 @@ const orchestrator = {
   createSession,
   createVehicle,
   createStayAt,
+  createShiftAt,
   deleteAllEmails,
   getLastEmail,
   extractUUID,
