@@ -2,7 +2,10 @@ import { useState } from "react";
 import styles from "./index.module.css";
 
 export default function LoginPage() {
-  const [formValues, setFormValues] = useState({ email: "", password: "" });
+  const [formValues, setFormValues] = useState({
+    username: "",
+    password: "",
+  });
   const [status, setStatus] = useState({ type: "idle" });
 
   function handleChange(event) {
@@ -38,11 +41,11 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <label className={styles.field}>
-          Email
+          Nome de usuário
           <input
-            type="email"
-            name="email"
-            value={formValues.email}
+            type="text"
+            name="username"
+            value={formValues.username}
             onChange={handleChange}
             required
           />

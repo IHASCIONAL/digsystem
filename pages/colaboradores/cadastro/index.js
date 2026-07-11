@@ -3,7 +3,15 @@ import authorization from "models/authorization.js";
 import { useCurrentUser } from "lib/useCurrentUser.js";
 import styles from "./index.module.css";
 
-const EMPTY_FORM_VALUES = { username: "", email: "", password: "" };
+const EMPTY_FORM_VALUES = {
+  username: "",
+  full_name: "",
+  cpf: "",
+  phone: "",
+  password: "",
+};
+
+const OPTIONAL_FIELDS = ["full_name", "cpf", "phone"];
 
 export default function CollaboratorRegistrationPage() {
   const { user, isLoading } = useCurrentUser();
@@ -24,10 +32,7 @@ export default function CollaboratorRegistrationPage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        ...formValues,
-        features: authorization.collaboratorFeatures,
-      }),
+      body: JSON.stringify(buildPayload(formValues)),
     });
 
     const responseBody = await response.json();
@@ -67,28 +72,52 @@ export default function CollaboratorRegistrationPage() {
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <label className={styles.field}>
-          Nome de usuário
+          Nome de usuário *
           <input
             name="username"
             value={formValues.username}
             onChange={handleChange}
+            placeholder="joao_silva"
+            pattern="[A-Za-z0-9_]{3,30}"
+            title="Letras, números e underscore, sem espaços (3 a 30 caracteres)"
             required
           />
+          <span className={styles.hint}>
+            Letras, números e underscore, sem espaços (3 a 30 caracteres)
+          </span>
         </label>
 
         <label className={styles.field}>
-          Email
+          Nome completo
           <input
-            type="email"
-            name="email"
-            value={formValues.email}
+            name="full_name"
+            value={formValues.full_name}
             onChange={handleChange}
-            required
           />
         </label>
 
         <label className={styles.field}>
-          Senha
+          CPF
+          <input
+            name="cpf"
+            value={formValues.cpf}
+            onChange={handleChange}
+            placeholder="000.000.000-00"
+          />
+        </label>
+
+        <label className={styles.field}>
+          Telefone
+          <input
+            name="phone"
+            value={formValues.phone}
+            onChange={handleChange}
+            placeholder="(00) 00000-0000"
+          />
+        </label>
+
+        <label className={styles.field}>
+          Senha *
           <input
             type="password"
             name="password"
@@ -118,4 +147,21 @@ export default function CollaboratorRegistrationPage() {
       )}
     </div>
   );
+}
+
+function buildPayload(formValues) {
+  const payload = {
+    username: formValues.username,
+    password: formValues.password,
+    features: authorization.collaboratorFeatures,
+  };
+
+  for (const field of OPTIONAL_FIELDS) {
+    const trimmedValue = formValues[field].trim();
+    if (trimmedValue !== "") {
+      payload[field] = trimmedValue;
+    }
+  }
+
+  return payload;
 }

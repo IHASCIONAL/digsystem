@@ -37,6 +37,11 @@
   outline-offset: 1px;
 }
 
+.hint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
 .submitButton {
   padding: 0.6rem;
   border: none;
