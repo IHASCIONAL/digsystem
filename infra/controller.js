@@ -10,6 +10,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   ForbiddenError,
+  ServiceError,
 } from "infra/errors";
 
 function onNoMatchHandler(request, response) {
@@ -30,6 +31,12 @@ function onErrorHandler(error, request, response) {
     clearSessionCookie(response);
     return response.status(error.statusCode).json(error);
   }
+
+  if (error instanceof ServiceError) {
+    console.error(error);
+    return response.status(error.statusCode).json(error);
+  }
+
   const publicErrorObject = new InternalServerError({
     cause: error,
   });
