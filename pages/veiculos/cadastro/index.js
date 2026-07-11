@@ -54,9 +54,15 @@ export default function VehicleRegistrationPage() {
             name="plate"
             value={formValues.plate}
             onChange={handleChange}
+            placeholder="ABC1234 ou ABC1D23"
+            pattern="[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}"
+            title="Formato antigo (ABC1234) ou Mercosul (ABC1D23)"
             maxLength={8}
             required
           />
+          <span className={styles.hint}>
+            Formato antigo (ABC1234) ou Mercosul (ABC1D23)
+          </span>
         </label>
 
         <label className={styles.field}>
