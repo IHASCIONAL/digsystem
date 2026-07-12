@@ -9,21 +9,24 @@
   --color-text-muted: #5b6b85;
   --color-success: #1a7f37;
   --color-error: #c0392b;
-  --color-admin-darker: #4a1010;
+  --color-collaborator: #4fa8de;
+  --color-collaborator-dark: #2e86c1;
+  --color-collaborator-darker: #1a5276;
 
   /* Hover accent for interactive elements (buttons, links, cards). Kept
-     separate from --color-primary-* so the admin theme below can flip only
-     the interactive hover states to red, without recoloring headings,
-     chart marks, and other static uses of the brand blue. */
+     separate from --color-primary-* so the collaborator theme below can
+     flip only the interactive hover states to a lighter blue, without
+     recoloring headings, chart marks, and other static uses of the brand
+     blue. Admin uses these defaults unscoped — no override needed. */
   --color-hover-subtle: var(--color-primary);
   --color-hover: var(--color-primary-dark);
   --color-hover-strong: var(--color-primary-darker);
 }
 
-.adminAccent {
-  --color-hover-subtle: #b3261e;
-  --color-hover: #7a1a15;
-  --color-hover-strong: var(--color-admin-darker);
+.collaboratorAccent {
+  --color-hover-subtle: var(--color-collaborator);
+  --color-hover: var(--color-collaborator-dark);
+  --color-hover-strong: var(--color-collaborator-darker);
 }
 
 * {

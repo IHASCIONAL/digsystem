@@ -34,6 +34,7 @@ export default function App({ Component, pageProps }) {
     !isLoading && ((isPublicRoute && !user) || (!isPublicRoute && !!user));
 
   const isAdmin = user?.features?.includes("create:user");
+  const isCollaborator = !!user && !isAdmin;
 
   return (
     <>
@@ -41,10 +42,12 @@ export default function App({ Component, pageProps }) {
         <title>Parar Park</title>
       </Head>
 
-      <div className={isAdmin ? "adminAccent" : undefined}>
+      <div className={isCollaborator ? "collaboratorAccent" : undefined}>
         <header
           className={
-            isAdmin ? `${styles.header} ${styles.headerAdmin}` : styles.header
+            isCollaborator
+              ? `${styles.header} ${styles.headerCollaborator}`
+              : styles.header
           }
         >
           <Link href="/" className={styles.brand}>
