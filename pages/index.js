@@ -1,14 +1,6 @@
-import { useState } from "react";
 import Link from "next/link";
-import useSWR from "swr";
 import { useCurrentUser } from "lib/useCurrentUser.js";
-import { formatElapsedTime } from "lib/formatElapsedTime.js";
 import styles from "./index.module.css";
-
-async function fetchAPI(key) {
-  const response = await fetch(key);
-  return response.json();
-}
 
 const SCREENS = [
   {
@@ -55,9 +47,19 @@ const ADMIN_SCREENS = [
     description: "Ver e editar o perfil de qualquer colaborador.",
   },
   {
+    href: "/colaboradores/expediente",
+    title: "Expediente da equipe",
+    description: "Ver e editar os check-ins e check-outs de expediente.",
+  },
+  {
+    href: "/veiculos/historico/todos",
+    title: "Histórico completo",
+    description: "Ver e editar todas as permanências, filtrando por período.",
+  },
+  {
     href: "/configuracoes",
     title: "Configurações",
-    description: "Definir o valor da diária cobrada dos clientes.",
+    description: "Definir o valor cobrado dos clientes a cada 12 horas.",
   },
 ];
 
@@ -70,8 +72,6 @@ export default function HomePage() {
     <div className={styles.container}>
       <h1>O que você precisa fazer?</h1>
 
-      {user?.features?.includes("create:shift") && <MyShift />}
-
       <div className={styles.list}>
         {screens.map((screen) => (
           <Link key={screen.href} href={screen.href} className={styles.card}>
@@ -80,75 +80,6 @@ export default function HomePage() {
           </Link>
         ))}
       </div>
-    </div>
-  );
-}
-
-function MyShift() {
-  const { data, isLoading, mutate } = useSWR("/api/v1/shifts/me", fetchAPI, {
-    refreshInterval: 30000,
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function handleCheckIn() {
-    setIsSubmitting(true);
-    await fetch("/api/v1/shifts", { method: "POST" });
-    await mutate();
-    setIsSubmitting(false);
-  }
-
-  async function handleCheckOut() {
-    setIsSubmitting(true);
-    await fetch("/api/v1/shifts", { method: "PATCH" });
-    await mutate();
-    setIsSubmitting(false);
-  }
-
-  if (isLoading || !data) {
-    return null;
-  }
-
-  const openShift = data.shift;
-
-  return (
-    <div className={styles.myShift}>
-      {openShift ? (
-        <>
-          <span className={styles.myShiftStatus}>
-            Expediente aberto desde{" "}
-            {new Date(openShift.check_in_time).toLocaleTimeString("pt-BR")} (
-            {formatElapsedTime(
-              Math.round(
-                (Date.now() - new Date(openShift.check_in_time).getTime()) /
-                  1000,
-              ),
-            )}
-            )
-          </span>
-          <button
-            type="button"
-            onClick={handleCheckOut}
-            disabled={isSubmitting}
-            className={styles.checkOutButton}
-          >
-            {isSubmitting ? "Registrando..." : "Fazer check-out"}
-          </button>
-        </>
-      ) : (
-        <>
-          <span className={styles.myShiftStatus}>
-            Você ainda não fez check-in hoje.
-          </span>
-          <button
-            type="button"
-            onClick={handleCheckIn}
-            disabled={isSubmitting}
-            className={styles.checkInButton}
-          >
-            {isSubmitting ? "Registrando..." : "Fazer check-in"}
-          </button>
-        </>
-      )}
     </div>
   );
 }

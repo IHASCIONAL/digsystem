@@ -6,6 +6,7 @@ const AUTO_CLOSE_AFTER_HOURS = 10;
 async function checkIn(userId) {
   await autoCloseStaleShift(userId);
   await validateNoOpenShift(userId);
+  await validateNoShiftToday(userId);
 
   const newShift = await runInsertQuery(userId);
   return newShift;
@@ -112,6 +113,29 @@ async function validateNoOpenShift(userId) {
     throw new ValidationError({
       message: "Você já está com o expediente em aberto.",
       action: "Registre o check-out antes de um novo check-in.",
+    });
+  }
+}
+
+async function validateNoShiftToday(userId) {
+  const results = await database.query({
+    text: `
+      SELECT
+        id
+      FROM
+        shifts
+      WHERE
+        user_id = $1
+        AND DATE(check_in_time) = CURRENT_DATE
+      LIMIT 1
+      ;
+      `,
+    values: [userId],
+  });
+  if (results.rowCount > 0) {
+    throw new ValidationError({
+      message: "Você já fez check-in hoje.",
+      action: "Um novo check-in só pode ser feito amanhã.",
     });
   }
 }
