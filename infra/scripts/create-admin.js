@@ -21,6 +21,10 @@ const ADMIN_FEATURES = [
   "read:dashboard",
   "read:settings",
   "update:settings",
+  "read:stay:all",
+  "update:stay:admin",
+  "read:shift:all",
+  "update:shift:admin",
 ];
 
 async function main() {

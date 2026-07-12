@@ -31,7 +31,9 @@ const availableFeatures = [
   // STAY
   "create:stay",
   "read:stay",
+  "read:stay:all",
   "update:stay",
+  "update:stay:admin",
 
   // DASHBOARD
   "read:dashboard",
@@ -39,7 +41,9 @@ const availableFeatures = [
   // SHIFT
   "create:shift",
   "read:shift",
+  "read:shift:all",
   "update:shift",
+  "update:shift:admin",
 
   // SETTINGS
   "read:settings",
@@ -72,6 +76,10 @@ const adminFeatures = [
   "read:dashboard",
   "read:settings",
   "update:settings",
+  "read:stay:all",
+  "update:stay:admin",
+  "read:shift:all",
+  "update:shift:admin",
 ];
 function can(user, feature, resource) {
   validateUser(user);
