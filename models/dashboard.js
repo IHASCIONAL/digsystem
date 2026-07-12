@@ -259,9 +259,9 @@ const SEED_VEHICLE_COUNT = 20;
 const SEED_COLLABORATOR_NAMES = ["ana", "bruno", "carla", "diego"];
 
 async function seedDevelopmentData(triggeredBy) {
-  const [fakeCollaboratorIds, dailyRateCents] = await Promise.all([
+  const [fakeCollaboratorIds, ratePer12hCents] = await Promise.all([
     createFakeCollaborators(),
-    settings.getDailyRateCents(),
+    settings.getRatePer12hCents(),
   ]);
   const actorPool = [triggeredBy, ...fakeCollaboratorIds];
 
@@ -282,25 +282,28 @@ async function seedDevelopmentData(triggeredBy) {
             - (RANDOM() * 29 || ' days')::interval
             - (RANDOM() * 23 || ' hours')::interval AS entry_time,
           RANDOM() < 0.85 AS should_close,
+          (RANDOM() * 30 || ' hours')::interval AS stay_duration,
           ($1::uuid[])[1 + FLOOR(RANDOM() * ARRAY_LENGTH($1::uuid[], 1))::int] AS check_in_actor,
           ($1::uuid[])[1 + FLOOR(RANDOM() * ARRAY_LENGTH($1::uuid[], 1))::int] AS check_out_actor
         FROM new_vehicles
       )
-      INSERT INTO stays (vehicle_id, entry_time, exit_time, checked_in_by, checked_out_by, price_cents)
+      INSERT INTO stays (vehicle_id, entry_time, exit_time, checked_in_by, checked_out_by, rate_cents, price_cents)
       SELECT
         vehicle_id,
         entry_time,
-        CASE
-          WHEN should_close THEN entry_time + (RANDOM() * 4 || ' hours')::interval
-          ELSE NULL
-        END,
+        CASE WHEN should_close THEN entry_time + stay_duration ELSE NULL END,
         check_in_actor,
         CASE WHEN should_close THEN check_out_actor ELSE NULL END,
-        $2
+        $2::int,
+        CASE
+          WHEN should_close THEN
+            GREATEST(1, CEIL(EXTRACT(EPOCH FROM stay_duration) / 43200.0))::int * $2::int
+          ELSE NULL
+        END
       FROM new_stays
       ;
     `,
-    values: [actorPool, dailyRateCents],
+    values: [actorPool, ratePer12hCents],
   });
 }
 

@@ -17,9 +17,10 @@ async function getHandler(request, response) {
 }
 
 async function patchHandler(request, response) {
-  const { daily_rate_cents } = request.body;
+  const { rate_per_12h_cents } = request.body;
 
-  const updatedSettings = await settings.updateDailyRateCents(daily_rate_cents);
+  const updatedSettings =
+    await settings.updateRatePer12hCents(rate_per_12h_cents);
 
   return response.status(200).json(updatedSettings);
 }

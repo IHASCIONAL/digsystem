@@ -5,7 +5,7 @@ import styles from "./index.module.css";
 export default function SettingsPage() {
   const { user, isLoading: isLoadingUser } = useCurrentUser();
 
-  const [dailyRateInput, setDailyRateInput] = useState("");
+  const [ratePer12hInput, setRatePer12hInput] = useState("");
   const [status, setStatus] = useState({ type: "loading" });
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function SettingsPage() {
         return;
       }
 
-      setDailyRateInput((responseBody.daily_rate_cents / 100).toFixed(2));
+      setRatePer12hInput((responseBody.rate_per_12h_cents / 100).toFixed(2));
       setStatus({ type: "idle" });
     }
 
@@ -31,14 +31,14 @@ export default function SettingsPage() {
     event.preventDefault();
     setStatus({ type: "submitting" });
 
-    const dailyRateCents = Math.round(
-      Number(dailyRateInput.replace(",", ".")) * 100,
+    const ratePer12hCents = Math.round(
+      Number(ratePer12hInput.replace(",", ".")) * 100,
     );
 
     const response = await fetch("/api/v1/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ daily_rate_cents: dailyRateCents }),
+      body: JSON.stringify({ rate_per_12h_cents: ratePer12hCents }),
     });
 
     const responseBody = await response.json();
@@ -48,7 +48,7 @@ export default function SettingsPage() {
       return;
     }
 
-    setDailyRateInput((responseBody.daily_rate_cents / 100).toFixed(2));
+    setRatePer12hInput((responseBody.rate_per_12h_cents / 100).toFixed(2));
     setStatus({ type: "success" });
   }
 
@@ -78,16 +78,17 @@ export default function SettingsPage() {
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <label className={styles.field}>
-          Valor da diária (R$)
+          Valor cobrado a cada 12 horas (R$)
           <input
             type="text"
             inputMode="decimal"
-            value={dailyRateInput}
-            onChange={(event) => setDailyRateInput(event.target.value)}
+            value={ratePer12hInput}
+            onChange={(event) => setRatePer12hInput(event.target.value)}
             required
           />
           <span className={styles.hint}>
-            Valor cobrado do cliente por permanência, do check-in ao check-out.
+            O valor é multiplicado pelo número de blocos de 12h da permanência
+            (arredondado para cima). Ex.: 13h de permanência cobram 2 blocos.
           </span>
         </label>
 

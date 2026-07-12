@@ -6,35 +6,35 @@ async function get() {
   return results.rows[0];
 }
 
-async function getDailyRateCents() {
+async function getRatePer12hCents() {
   const settings = await get();
-  return settings.daily_rate_cents;
+  return settings.rate_per_12h_cents;
 }
 
-async function updateDailyRateCents(dailyRateCents) {
-  validateDailyRateCents(dailyRateCents);
+async function updateRatePer12hCents(ratePer12hCents) {
+  validateRatePer12hCents(ratePer12hCents);
 
   const results = await database.query({
     text: `
       UPDATE settings
       SET
-        daily_rate_cents = $1,
+        rate_per_12h_cents = $1,
         updated_at = timezone('utc', now())
       WHERE
         id = 1
       RETURNING *
       ;
       `,
-    values: [dailyRateCents],
+    values: [ratePer12hCents],
   });
   return results.rows[0];
 }
 
-function validateDailyRateCents(dailyRateCents) {
-  if (!Number.isInteger(dailyRateCents) || dailyRateCents <= 0) {
+function validateRatePer12hCents(ratePer12hCents) {
+  if (!Number.isInteger(ratePer12hCents) || ratePer12hCents <= 0) {
     throw new ValidationError({
       message:
-        "O valor da diária deve ser um número inteiro positivo, em centavos.",
+        "O valor cobrado a cada 12 horas deve ser um número inteiro positivo, em centavos.",
       action: "Informe um valor em centavos maior que zero.",
     });
   }
@@ -42,8 +42,8 @@ function validateDailyRateCents(dailyRateCents) {
 
 const settings = {
   get,
-  getDailyRateCents,
-  updateDailyRateCents,
+  getRatePer12hCents,
+  updateRatePer12hCents,
 };
 
 export default settings;

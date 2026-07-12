@@ -35,7 +35,7 @@ describe("GET /api/v1/settings", () => {
     });
   });
 
-  test("Admin reads the default daily rate", async () => {
+  test("Admin reads the default rate", async () => {
     const admin = await orchestrator.createAdmin({});
     const adminSession = await orchestrator.createSession(admin.id);
 
@@ -49,7 +49,7 @@ describe("GET /api/v1/settings", () => {
 
     expect(responseBody).toEqual({
       id: 1,
-      daily_rate_cents: 2500,
+      rate_per_12h_cents: 2500,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
     });
