@@ -11,6 +11,8 @@ const ADMIN_FEATURES = [
   "create:vehicle",
   "read:vehicle",
   "update:vehicle",
+  "delete:vehicle",
+  "delete:vehicle:others",
   "create:stay",
   "read:stay",
   "update:stay",

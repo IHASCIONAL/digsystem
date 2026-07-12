@@ -128,6 +128,34 @@ async function update(plate, vehicleInputValues) {
   }
 }
 
+async function remove(plate) {
+  const vehicleToDelete = await findOneByPlate(plate);
+
+  await validateNoStays(vehicleToDelete.id);
+
+  await database.query({
+    text: `DELETE FROM vehicles WHERE id = $1;`,
+    values: [vehicleToDelete.id],
+  });
+
+  return vehicleToDelete;
+}
+
+async function validateNoStays(vehicleId) {
+  const results = await database.query({
+    text: `SELECT id FROM stays WHERE vehicle_id = $1 LIMIT 1;`,
+    values: [vehicleId],
+  });
+  if (results.rowCount > 0) {
+    throw new ValidationError({
+      message:
+        "Não é possível excluir um veículo com permanências registradas.",
+      action:
+        "Veículos com histórico de entradas e saídas não podem ser removidos do cadastro.",
+    });
+  }
+}
+
 async function validateUniquePlate(plate) {
   const results = await database.query({
     text: `
@@ -169,6 +197,7 @@ const vehicle = {
   findAll,
   findOneByPlate,
   update,
+  remove,
 };
 
 export default vehicle;
