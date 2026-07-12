@@ -6,7 +6,7 @@
 
 .container h1 {
   margin: 0;
-  color: var(--color-primary-darker);
+  color: var(--color-hover-strong);
 }
 
 .errorMessage {
@@ -78,7 +78,7 @@
 }
 
 .statTileAccent {
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--color-hover-subtle);
 }
 
 .statLabel {
@@ -90,7 +90,7 @@
 .statValue {
   font-size: 1.7rem;
   font-weight: 600;
-  color: var(--color-primary-darker);
+  color: var(--color-hover-strong);
   font-variant-numeric: tabular-nums;
 }
 
@@ -148,7 +148,7 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--color-primary);
+  color: var(--color-hover-subtle);
   font-size: 0.8rem;
   cursor: pointer;
   text-decoration: underline;
@@ -165,12 +165,13 @@
 }
 
 .axisLabel {
-  font-size: 10px;
+  font-size: 12px;
   fill: var(--color-text-muted);
 }
 
 .valueLabel {
-  font-size: 10px;
+  font-size: 12px;
+  font-weight: 600;
   fill: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
@@ -186,30 +187,30 @@
 }
 
 .bar {
-  fill: var(--color-primary);
+  fill: var(--color-hover-subtle);
 }
 
 .line {
   fill: none;
-  stroke: var(--color-primary);
+  stroke: var(--color-hover-subtle);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .areaFill {
-  fill: var(--color-primary);
-  opacity: 0.1;
+  fill: var(--color-hover-subtle);
+  opacity: 0.12;
 }
 
 .point {
-  fill: var(--color-primary);
+  fill: var(--color-hover-subtle);
   stroke: var(--color-surface);
   stroke-width: 2;
 }
 
 .pointActive {
-  fill: var(--color-primary-darker);
+  fill: var(--color-hover-strong);
   stroke: var(--color-surface);
   stroke-width: 2;
 }
@@ -217,14 +218,32 @@
 .tooltip {
   position: fixed;
   transform: translate(-50%, -130%);
-  background: var(--color-primary-darker);
+  background: var(--color-hover-strong);
   color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+}
+
+.tooltipDate {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  margin-bottom: 0.15rem;
+}
+
+.tooltipValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.tooltipDelta {
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.9;
 }
 
 .table {
@@ -240,7 +259,7 @@
 }
 
 .table th {
-  color: var(--color-primary-dark);
+  color: var(--color-hover);
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;

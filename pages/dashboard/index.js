@@ -7,8 +7,8 @@ import styles from "./index.module.css";
 const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 
 const CHART_WIDTH = 880;
-const CHART_HEIGHT = 220;
-const CHART_PADDING = { top: 10, right: 10, bottom: 24, left: 10 };
+const CHART_HEIGHT = 240;
+const CHART_PADDING = { top: 16, right: 10, bottom: 28, left: 10 };
 const BAR_MAX_THICKNESS = 24;
 const BAR_RADIUS = 4;
 
@@ -140,7 +140,7 @@ export default function DashboardPage() {
           ) : (
             <BarChart
               data={peakHoursSource.map((entry) => ({
-                label: String(entry.hour),
+                label: `${entry.hour}h`,
                 value: entry.count,
               }))}
               showLabelEvery={3}
@@ -149,7 +149,7 @@ export default function DashboardPage() {
         </div>
 
         <div className={styles.chartCard}>
-          <h3>Melhores dias da semana</h3>
+          <h3>Entradas por dia da semana</h3>
           <BarChart
             data={data.busiest_weekdays.map((entry) => ({
               label: entry.label.slice(0, 3),
@@ -181,8 +181,8 @@ export default function DashboardPage() {
               <tr>
                 <th>Colaborador</th>
                 <th>Veículos cadastrados</th>
-                <th>Check-ins</th>
-                <th>Check-outs</th>
+                <th>Entradas registradas</th>
+                <th>Saídas registradas</th>
                 <th>Receita gerada</th>
               </tr>
             </thead>
@@ -409,11 +409,28 @@ function LineChart({ data }) {
           className={styles.tooltip}
           style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
         >
-          {formatShortDate(hoveredPoint.label)}: {hoveredPoint.value}
+          <div className={styles.tooltipDate}>
+            {formatFullDate(hoveredPoint.label)}
+          </div>
+          <div className={styles.tooltipValue}>
+            {hoveredPoint.value}{" "}
+            {hoveredPoint.value === 1 ? "entrada" : "entradas"}
+          </div>
+          {hoverIndex > 0 && (
+            <div className={styles.tooltipDelta}>
+              {formatDelta(hoveredPoint.value - points[hoverIndex - 1].value)}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+function formatDelta(delta) {
+  if (delta > 0) return `▲ +${delta} vs. dia anterior`;
+  if (delta < 0) return `▼ ${delta} vs. dia anterior`;
+  return "Estável vs. dia anterior";
 }
 
 function roundedTopBarPath(x, y, width, height, radius) {
@@ -436,4 +453,15 @@ function roundedTopBarPath(x, y, width, height, radius) {
 function formatShortDate(isoDate) {
   const [, month, day] = isoDate.split("-");
   return `${day}/${month}`;
+}
+
+function formatFullDate(isoDate) {
+  const date = new Date(`${isoDate}T00:00:00Z`);
+  const formatted = new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    timeZone: "UTC",
+  }).format(date);
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
