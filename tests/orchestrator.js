@@ -57,6 +57,9 @@ async function createUser(userObject = {}) {
     email: userObject.email || faker.internet.email(),
     password: userObject.password || "validpassword",
     features: userObject.features,
+    full_name: userObject.full_name,
+    cpf: userObject.cpf,
+    phone: userObject.phone,
   });
 }
 
@@ -95,6 +98,32 @@ async function createVehicle(vehicleObject = {}) {
   function generateRandomPlate() {
     return `${faker.string.alpha({ length: 3, casing: "upper" })}${faker.string.numeric(4)}`;
   }
+}
+
+async function createStayAt(vehicleId, checkedInBy, { entryTime }) {
+  const results = await database.query({
+    text: `
+      INSERT INTO stays (vehicle_id, entry_time, checked_in_by)
+      VALUES ($1, $2, $3)
+      RETURNING *
+      ;
+    `,
+    values: [vehicleId, entryTime, checkedInBy],
+  });
+  return results.rows[0];
+}
+
+async function createShiftAt(userId, { checkInTime }) {
+  const results = await database.query({
+    text: `
+      INSERT INTO shifts (user_id, check_in_time)
+      VALUES ($1, $2)
+      RETURNING *
+      ;
+    `,
+    values: [userId, checkInTime],
+  });
+  return results.rows[0];
 }
 
 async function deleteAllEmails() {
@@ -141,6 +170,8 @@ const orchestrator = {
   createCollaborator,
   createSession,
   createVehicle,
+  createStayAt,
+  createShiftAt,
   deleteAllEmails,
   getLastEmail,
   extractUUID,

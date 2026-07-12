@@ -6,9 +6,21 @@ import authorization from "models/authorization.js";
 const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
+router.get(controller.canRequest("read:user"), getHandler);
 router.post(controller.canRequest("create:user"), postHandler);
 
 export default router.handler(controller.errorHandlers);
+
+async function getHandler(request, response) {
+  const userTryingToGet = request.context.user;
+  const users = await user.findAll();
+
+  const secureOutputValues = users.map((foundUser) =>
+    authorization.filterOutput(userTryingToGet, "read:user", foundUser),
+  );
+
+  return response.status(200).json(secureOutputValues);
+}
 
 async function postHandler(request, response) {
   const userTryingToPost = request.context.user;

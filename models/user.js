@@ -47,6 +47,25 @@ async function addFeatures(userId, features) {
     return results.rows[0];
   }
 }
+async function findAll() {
+  const results = await runSelectQuery();
+  return results.rows;
+
+  async function runSelectQuery() {
+    return database.query({
+      text: `
+        SELECT
+          *
+        FROM
+          users
+        ORDER BY
+          username ASC
+        ;
+      `,
+    });
+  }
+}
+
 async function findOneById(id) {
   const userFound = await runSelectQuery(id);
 
@@ -148,11 +167,17 @@ async function create(userInputValues) {
 async function update(username, userInputValues) {
   const currentUser = await findOneByUsername(username);
 
-  if ("username" in userInputValues) {
+  if (
+    "username" in userInputValues &&
+    userInputValues.username !== currentUser.username
+  ) {
     await validateUniqueUsername(userInputValues.username);
   }
 
-  if ("email" in userInputValues) {
+  if (
+    "email" in userInputValues &&
+    userInputValues.email !== currentUser.email
+  ) {
     await validateUniqueEmail(userInputValues.email);
   }
 
@@ -239,15 +264,18 @@ async function runUpdateQuery(userWithNewValues) {
     text: `
               UPDATE users
 
-              SET 
+              SET
                 username = $2,
                 email = $3,
                 password = $4,
+                full_name = $5,
+                cpf = $6,
+                phone = $7,
                 updated_at = timezone('utc', now())
 
               WHERE
                 id = $1
-               
+
               RETURNING *
               ;
               `,
@@ -256,6 +284,9 @@ async function runUpdateQuery(userWithNewValues) {
       userWithNewValues.username,
       userWithNewValues.email,
       userWithNewValues.password,
+      userWithNewValues.full_name,
+      userWithNewValues.cpf,
+      userWithNewValues.phone,
     ],
   });
   return results.rows[0];
@@ -267,6 +298,7 @@ async function hashPasswordInObject(userInputValues) {
 }
 const user = {
   create,
+  findAll,
   findOneById,
   findOneByUsername,
   findOneByEmail,

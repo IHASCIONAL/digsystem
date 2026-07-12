@@ -6,7 +6,11 @@ const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
 router.get(controller.canRequest("read:vehicle"), getHandler);
-router.patch(controller.canRequest("update:vehicle"), patchHandler);
+router.patch(
+  controller.canRequest("update:vehicle"),
+  controller.requireOpenShift(),
+  patchHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 

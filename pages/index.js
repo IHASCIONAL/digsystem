@@ -32,9 +32,34 @@ const SCREENS = [
 
 const ADMIN_SCREENS = [
   {
+    href: "/dashboard",
+    title: "Dashboard",
+    description: "Visão geral do estacionamento e atividade dos colaboradores.",
+  },
+  {
     href: "/colaboradores/cadastro",
     title: "Cadastro de colaborador",
     description: "Criar acesso para um novo colaborador.",
+  },
+  {
+    href: "/colaboradores/todos",
+    title: "Colaboradores cadastrados",
+    description: "Ver e editar o perfil de qualquer colaborador.",
+  },
+  {
+    href: "/colaboradores/expediente",
+    title: "Expediente da equipe",
+    description: "Ver e editar os check-ins e check-outs de expediente.",
+  },
+  {
+    href: "/veiculos/historico/todos",
+    title: "Histórico completo",
+    description: "Ver e editar todas as permanências, filtrando por período.",
+  },
+  {
+    href: "/configuracoes",
+    title: "Configurações",
+    description: "Definir o valor cobrado dos clientes a cada 12 horas.",
   },
 ];
 

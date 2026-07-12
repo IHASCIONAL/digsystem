@@ -1,5 +1,6 @@
 import orchestrator from "tests/orchestrator.js";
 
+let collaborator;
 let collaboratorSession;
 
 beforeAll(async () => {
@@ -7,8 +8,11 @@ beforeAll(async () => {
   await orchestrator.clearDatabase();
   await orchestrator.runPendingMigrations();
 
-  const collaborator = await orchestrator.createCollaborator({});
+  collaborator = await orchestrator.createCollaborator({});
   collaboratorSession = await orchestrator.createSession(collaborator.id);
+  await orchestrator.createShiftAt(collaborator.id, {
+    checkInTime: new Date().toISOString(),
+  });
 });
 
 describe("PATCH /api/v1/stays", () => {
@@ -58,6 +62,12 @@ describe("PATCH /api/v1/stays", () => {
       vehicle_id: vehicle.id,
       entry_time: responseBody.entry_time,
       exit_time: responseBody.exit_time,
+      checked_in_by: collaborator.id,
+      checked_out_by: collaborator.id,
+      rate_cents: 2500,
+      price_cents: 2500,
+      edited_by: null,
+      edited_at: null,
       created_at: responseBody.created_at,
       updated_at: responseBody.updated_at,
       duration_in_seconds: responseBody.duration_in_seconds,
@@ -173,5 +183,31 @@ describe("PATCH /api/v1/stays", () => {
         "Verifique se o veículo está estacionado antes de registrar a saída.",
       status_code: 404,
     });
+  });
+
+  test("Price is rounded up to the next 12h block", async () => {
+    const vehicle = await orchestrator.createVehicle();
+
+    const thirteenHoursAgo = new Date(
+      Date.now() - 13 * 60 * 60 * 1000,
+    ).toISOString();
+    await orchestrator.createStayAt(vehicle.id, collaborator.id, {
+      entryTime: thirteenHoursAgo,
+    });
+
+    const response = await fetch("http://localhost:3000/api/v1/stays", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `session_id=${collaboratorSession.token}`,
+      },
+      body: JSON.stringify({ plate: vehicle.plate }),
+    });
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+    expect(responseBody.rate_cents).toBe(2500);
+    expect(responseBody.price_cents).toBe(5000);
   });
 });

@@ -44,6 +44,9 @@ describe("Use case: Admin creates a collaborator, collaborator logs in", () => {
       id: createUserResponseBody.id,
       username: "RegistrationFlow",
       features: authorization.collaboratorFeatures,
+      full_name: "Fluxo De Cadastro",
+      cpf: null,
+      phone: "11999998888",
       created_at: createUserResponseBody.created_at,
       updated_at: createUserResponseBody.updated_at,
     });

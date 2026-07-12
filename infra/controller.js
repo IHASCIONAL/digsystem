@@ -2,6 +2,7 @@ import * as cookie from "cookie";
 import session from "models/session.js";
 import user from "models/user.js";
 import authorization from "models/authorization.js";
+import shift from "models/shift.js";
 
 import {
   InternalServerError,
@@ -113,6 +114,31 @@ function canRequest(feature) {
     });
   };
 }
+// Admin doesn't clock in (see the SHIFT comment in models/authorization.js),
+// so operating vehicles/stays is only ever gated by an open shift for
+// collaborators — admin is exempt from this check entirely.
+function requireOpenShift() {
+  return async function requireOpenShiftMiddleware(request, response, next) {
+    const userTryingToRequest = request.context.user;
+
+    if (userTryingToRequest.features.includes("create:user")) {
+      return next();
+    }
+
+    const openShift = await shift.findCurrentByUserId(userTryingToRequest.id);
+
+    if (!openShift) {
+      throw new ForbiddenError({
+        message:
+          "Você precisa fazer check-in do seu expediente antes de operar veículos.",
+        action: "Faça o check-in na página inicial antes de continuar.",
+      });
+    }
+
+    return next();
+  };
+}
+
 const controller = {
   errorHandlers: {
     onNoMatch: onNoMatchHandler,
@@ -123,6 +149,7 @@ const controller = {
   clearSessionCookie,
   injectAnonymousOrUser,
   canRequest,
+  requireOpenShift,
 };
 
 export default controller;

@@ -7,8 +7,16 @@ const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
 router.get(controller.canRequest("read:stay"), getHandler);
-router.post(controller.canRequest("create:stay"), postHandler);
-router.patch(controller.canRequest("update:stay"), patchHandler);
+router.post(
+  controller.canRequest("create:stay"),
+  controller.requireOpenShift(),
+  postHandler,
+);
+router.patch(
+  controller.canRequest("update:stay"),
+  controller.requireOpenShift(),
+  patchHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 
@@ -19,19 +27,21 @@ async function getHandler(request, response) {
 }
 
 async function postHandler(request, response) {
+  const userTryingToCheckIn = request.context.user;
   const { plate } = request.body;
 
   const vehicleFound = await vehicle.findOneByPlate(plate);
-  const newStay = await stay.create(vehicleFound.id);
+  const newStay = await stay.create(vehicleFound.id, userTryingToCheckIn.id);
 
   return response.status(201).json(newStay);
 }
 
 async function patchHandler(request, response) {
+  const userTryingToCheckOut = request.context.user;
   const { plate } = request.body;
 
   const vehicleFound = await vehicle.findOneByPlate(plate);
-  const closedStay = await stay.close(vehicleFound.id);
+  const closedStay = await stay.close(vehicleFound.id, userTryingToCheckOut.id);
 
   return response.status(200).json(closedStay);
 }

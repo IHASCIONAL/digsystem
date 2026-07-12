@@ -1,0 +1,70 @@
+.container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.container h1 {
+  color: var(--color-primary-darker);
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.empty {
+  color: var(--color-text-muted);
+}
+
+.errorMessage {
+  color: var(--color-error);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.table th {
+  color: var(--color-hover);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.openBadge {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.autoClosedBadge {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.editedBadge {
+  color: var(--color-error);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.editLink {
+  color: var(--color-hover-subtle);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.editLink:hover {
+  color: var(--color-hover-strong);
+}

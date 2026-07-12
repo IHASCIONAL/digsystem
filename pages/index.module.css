@@ -28,8 +28,8 @@
 }
 
 .card:hover {
-  background: var(--color-primary-darker);
-  border-color: var(--color-primary-darker);
+  background: var(--color-hover-strong);
+  border-color: var(--color-hover-strong);
 }
 
 .card:hover .cardTitle,

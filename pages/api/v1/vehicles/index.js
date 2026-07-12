@@ -6,7 +6,11 @@ const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
 router.get(controller.canRequest("read:vehicle"), getHandler);
-router.post(controller.canRequest("create:vehicle"), postHandler);
+router.post(
+  controller.canRequest("create:vehicle"),
+  controller.requireOpenShift(),
+  postHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 
@@ -17,8 +21,12 @@ async function getHandler(request, response) {
 }
 
 async function postHandler(request, response) {
+  const userTryingToCreate = request.context.user;
   const vehicleInputValues = request.body;
-  const newVehicle = await vehicle.create(vehicleInputValues);
+  const newVehicle = await vehicle.create(
+    vehicleInputValues,
+    userTryingToCreate.id,
+  );
 
   return response.status(201).json(newVehicle);
 }

@@ -31,10 +31,26 @@ const availableFeatures = [
   // STAY
   "create:stay",
   "read:stay",
+  "read:stay:all",
   "update:stay",
+  "update:stay:admin",
+
+  // DASHBOARD
+  "read:dashboard",
+
+  // SHIFT
+  "create:shift",
+  "read:shift",
+  "read:shift:all",
+  "update:shift",
+  "update:shift:admin",
+
+  // SETTINGS
+  "read:settings",
+  "update:settings",
 ];
 
-const collaboratorFeatures = [
+const vehicleAndStayFeatures = [
   "create:session",
   "read:session",
   "create:vehicle",
@@ -45,7 +61,26 @@ const collaboratorFeatures = [
   "update:stay",
 ];
 
-const adminFeatures = [...collaboratorFeatures, "create:user", "read:user"];
+// Shift check-in/check-out is a collaborator-only routine — admins don't
+// clock in, so this bundle is deliberately not part of adminFeatures below.
+const shiftFeatures = ["create:shift", "read:shift", "update:shift"];
+
+const collaboratorFeatures = [...vehicleAndStayFeatures, ...shiftFeatures];
+
+const adminFeatures = [
+  ...vehicleAndStayFeatures,
+  "create:user",
+  "read:user",
+  "update:user",
+  "update:user:others",
+  "read:dashboard",
+  "read:settings",
+  "update:settings",
+  "read:stay:all",
+  "update:stay:admin",
+  "read:shift:all",
+  "update:shift:admin",
+];
 function can(user, feature, resource) {
   validateUser(user);
   validateFeature(feature);
@@ -70,13 +105,21 @@ function filterOutput(user, feature, resource) {
   validateFeature(feature);
   validateResource(resource);
   if (feature === "read:user") {
-    return {
+    const output = {
       id: resource.id,
       username: resource.username,
       features: resource.features,
       created_at: resource.created_at,
       updated_at: resource.updated_at,
     };
+
+    if (can(user, "update:user:others")) {
+      output.full_name = resource.full_name;
+      output.cpf = resource.cpf;
+      output.phone = resource.phone;
+    }
+
+    return output;
   }
   if (feature === "read:user:self") {
     if (user.id === resource.id) {

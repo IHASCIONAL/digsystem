@@ -16,6 +16,15 @@ const ADMIN_FEATURES = [
   "update:stay",
   "create:user",
   "read:user",
+  "update:user",
+  "update:user:others",
+  "read:dashboard",
+  "read:settings",
+  "update:settings",
+  "read:stay:all",
+  "update:stay:admin",
+  "read:shift:all",
+  "update:shift:admin",
 ];
 
 async function main() {
@@ -66,7 +75,11 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { ADMIN_FEATURES };

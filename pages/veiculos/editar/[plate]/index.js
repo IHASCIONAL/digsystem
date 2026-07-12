@@ -11,6 +11,7 @@ export default function VehicleEditPage() {
 
   const [targetPlate, setTargetPlate] = useState(null);
   const [formValues, setFormValues] = useState(null);
+  const [createdAt, setCreatedAt] = useState(null);
   const [status, setStatus] = useState({ type: "loading" });
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function VehicleEditPage() {
       }
 
       setTargetPlate(responseBody.plate);
+      setCreatedAt(responseBody.created_at);
       setFormValues({
         plate: responseBody.plate,
         owner_name: responseBody.owner_name || "",
@@ -89,6 +91,11 @@ export default function VehicleEditPage() {
   return (
     <div className={styles.container}>
       <h1>Editar veículo</h1>
+      {createdAt && (
+        <p className={styles.hint}>
+          Cadastrado em {new Date(createdAt).toLocaleString("pt-BR")}
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <label className={styles.field}>

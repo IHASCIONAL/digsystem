@@ -41,7 +41,7 @@
 }
 
 .searchRow button:hover:not(:disabled) {
-  background: var(--color-primary-dark);
+  background: var(--color-hover);
 }
 
 .searchRow button:disabled {

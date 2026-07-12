@@ -60,7 +60,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: var(--color-primary-dark);
+  background: var(--color-hover);
 }
 
 .submitButton:disabled {
