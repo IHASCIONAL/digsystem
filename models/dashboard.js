@@ -18,7 +18,10 @@ const WEEKDAY_LABELS = [
 
 const DAILY_STAYS_WINDOW_IN_DAYS = 30;
 
-async function getSummary() {
+async function getSummary(startDate, endDate) {
+  validateRange(startDate, endDate);
+  const hasRange = !!startDate && !!endDate;
+
   const [
     totalVehicles,
     currentlyParked,
@@ -29,14 +32,16 @@ async function getSummary() {
     averageDurationPerDay,
     collaboratorActivity,
   ] = await Promise.all([
-    countTotalVehicles(),
+    countTotalVehicles(startDate, endDate),
     countCurrentlyParked(),
-    getRevenueSummary(),
-    getPeakHours(),
-    getBusiestWeekdays(),
-    getDailyStays(),
-    getAverageDurationPerDay(),
-    getCollaboratorActivity(),
+    getRevenueSummary(startDate, endDate),
+    getPeakHours(startDate, endDate),
+    getBusiestWeekdays(startDate, endDate),
+    hasRange ? getDailyStaysInRange(startDate, endDate) : getDailyStays(),
+    hasRange
+      ? getAverageDurationPerDayInRange(startDate, endDate)
+      : getAverageDurationPerDay(),
+    getCollaboratorActivity(startDate, endDate),
   ]);
 
   return {
@@ -51,14 +56,52 @@ async function getSummary() {
   };
 }
 
-async function getRevenueSummary() {
+function validateRange(startDate, endDate) {
+  if (startDate) validateDate(startDate);
+  if (endDate) validateDate(endDate);
+
+  if ((startDate && !endDate) || (!startDate && endDate)) {
+    throw new ValidationError({
+      message: "É necessário informar a data inicial e a data final juntas.",
+      action: "Informe as duas datas do período, ou nenhuma delas.",
+    });
+  }
+
+  if (startDate && endDate && startDate > endDate) {
+    throw new ValidationError({
+      message: "A data inicial deve ser anterior ou igual à data final.",
+      action: "Ajuste o período informado.",
+    });
+  }
+}
+
+function validateDate(date) {
+  if (!DATE_FORMAT_REGEX.test(date) || Number.isNaN(Date.parse(date))) {
+    throw new ValidationError({
+      message: "A data informada não é válida.",
+      action: "Informe uma data no formato AAAA-MM-DD.",
+    });
+  }
+}
+
+async function getRevenueSummary(startDate, endDate) {
   const [totalResult, todayResult] = await Promise.all([
-    database.query(`
-      SELECT COALESCE(SUM(price_cents), 0)::int AS total
-      FROM stays
-      WHERE exit_time IS NOT NULL
-      ;
-    `),
+    startDate && endDate
+      ? database.query({
+          text: `
+            SELECT COALESCE(SUM(price_cents), 0)::int AS total
+            FROM stays
+            WHERE exit_time IS NOT NULL AND DATE(exit_time) BETWEEN $1::date AND $2::date
+            ;
+          `,
+          values: [startDate, endDate],
+        })
+      : database.query(`
+          SELECT COALESCE(SUM(price_cents), 0)::int AS total
+          FROM stays
+          WHERE exit_time IS NOT NULL
+          ;
+        `),
     database.query(`
       SELECT COALESCE(SUM(price_cents), 0)::int AS total
       FROM stays
@@ -73,9 +116,19 @@ async function getRevenueSummary() {
   };
 }
 
-async function countTotalVehicles() {
+async function countTotalVehicles(startDate, endDate) {
   const results = await database.query(
-    "SELECT COUNT(*)::int AS count FROM vehicles;",
+    startDate && endDate
+      ? {
+          text: `
+            SELECT COUNT(*)::int AS count
+            FROM vehicles
+            WHERE DATE(created_at) BETWEEN $1::date AND $2::date
+            ;
+          `,
+          values: [startDate, endDate],
+        }
+      : "SELECT COUNT(*)::int AS count FROM vehicles;",
   );
   return results.rows[0].count;
 }
@@ -87,24 +140,20 @@ async function countCurrentlyParked() {
   return results.rows[0].count;
 }
 
-async function getPeakHours(date) {
-  if (date) {
-    validateDate(date);
-  }
-
+async function getPeakHours(startDate, endDate) {
   const results = await database.query(
-    date
+    startDate && endDate
       ? {
           text: `
             SELECT
               EXTRACT(HOUR FROM entry_time)::int AS hour,
               COUNT(*)::int AS count
             FROM stays
-            WHERE DATE(entry_time) = $1::date
+            WHERE DATE(entry_time) BETWEEN $1::date AND $2::date
             GROUP BY hour
             ;
           `,
-          values: [date],
+          values: [startDate, endDate],
         }
       : `
         SELECT
@@ -124,24 +173,30 @@ async function getPeakHours(date) {
   }));
 }
 
-function validateDate(date) {
-  if (!DATE_FORMAT_REGEX.test(date) || Number.isNaN(Date.parse(date))) {
-    throw new ValidationError({
-      message: "A data informada não é válida.",
-      action: "Informe uma data no formato AAAA-MM-DD.",
-    });
-  }
-}
-
-async function getBusiestWeekdays() {
-  const results = await database.query(`
-    SELECT
-      EXTRACT(DOW FROM entry_time)::int AS weekday,
-      COUNT(*)::int AS count
-    FROM stays
-    GROUP BY weekday
-    ;
-  `);
+async function getBusiestWeekdays(startDate, endDate) {
+  const results = await database.query(
+    startDate && endDate
+      ? {
+          text: `
+            SELECT
+              EXTRACT(DOW FROM entry_time)::int AS weekday,
+              COUNT(*)::int AS count
+            FROM stays
+            WHERE DATE(entry_time) BETWEEN $1::date AND $2::date
+            GROUP BY weekday
+            ;
+          `,
+          values: [startDate, endDate],
+        }
+      : `
+        SELECT
+          EXTRACT(DOW FROM entry_time)::int AS weekday,
+          COUNT(*)::int AS count
+        FROM stays
+        GROUP BY weekday
+        ;
+      `,
+  );
 
   const countByWeekday = new Map(
     results.rows.map((row) => [row.weekday, row.count]),
@@ -169,18 +224,58 @@ async function getDailyStays() {
     results.rows.map((row) => [toDateKey(row.date), row.count]),
   );
 
-  const days = [];
-  for (let offset = DAILY_STAYS_WINDOW_IN_DAYS - 1; offset >= 0; offset--) {
-    const date = new Date();
-    date.setUTCDate(date.getUTCDate() - offset);
-    const dateKey = toDateKey(date);
-    days.push({ date: dateKey, count: countByDate.get(dateKey) || 0 });
-  }
-  return days;
+  return generateTrailingDateKeys(DAILY_STAYS_WINDOW_IN_DAYS).map(
+    (dateKey) => ({ date: dateKey, count: countByDate.get(dateKey) || 0 }),
+  );
+}
+
+async function getDailyStaysInRange(startDate, endDate) {
+  const results = await database.query({
+    text: `
+      SELECT
+        DATE(entry_time) AS date,
+        COUNT(*)::int AS count
+      FROM stays
+      WHERE DATE(entry_time) BETWEEN $1::date AND $2::date
+      GROUP BY date
+      ;
+      `,
+    values: [startDate, endDate],
+  });
+
+  const countByDate = new Map(
+    results.rows.map((row) => [toDateKey(row.date), row.count]),
+  );
+
+  return generateDateKeysInRange(startDate, endDate).map((dateKey) => ({
+    date: dateKey,
+    count: countByDate.get(dateKey) || 0,
+  }));
 }
 
 function toDateKey(date) {
   return new Date(date).toISOString().slice(0, 10);
+}
+
+function generateTrailingDateKeys(windowInDays) {
+  const keys = [];
+  for (let offset = windowInDays - 1; offset >= 0; offset--) {
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() - offset);
+    keys.push(toDateKey(date));
+  }
+  return keys;
+}
+
+function generateDateKeysInRange(startDate, endDate) {
+  const keys = [];
+  const current = new Date(`${startDate}T00:00:00Z`);
+  const end = new Date(`${endDate}T00:00:00Z`);
+  while (current <= end) {
+    keys.push(toDateKey(current));
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+  return keys;
 }
 
 async function getAverageDurationPerDay() {
@@ -203,50 +298,122 @@ async function getAverageDurationPerDay() {
     ]),
   );
 
-  const days = [];
-  for (let offset = DAILY_STAYS_WINDOW_IN_DAYS - 1; offset >= 0; offset--) {
-    const date = new Date();
-    date.setUTCDate(date.getUTCDate() - offset);
-    const dateKey = toDateKey(date);
-    days.push({
+  return generateTrailingDateKeys(DAILY_STAYS_WINDOW_IN_DAYS).map(
+    (dateKey) => ({
       date: dateKey,
       avg_duration_in_seconds: avgDurationByDate.get(dateKey) || 0,
-    });
-  }
-  return days;
+    }),
+  );
 }
 
-async function getCollaboratorActivity() {
+async function getAverageDurationPerDayInRange(startDate, endDate) {
+  const results = await database.query({
+    text: `
+      SELECT
+        DATE(entry_time) AS date,
+        AVG(EXTRACT(EPOCH FROM (exit_time - entry_time)))::int AS avg_duration_in_seconds
+      FROM stays
+      WHERE
+        DATE(entry_time) BETWEEN $1::date AND $2::date
+        AND exit_time IS NOT NULL
+      GROUP BY date
+      ;
+      `,
+    values: [startDate, endDate],
+  });
+
+  const avgDurationByDate = new Map(
+    results.rows.map((row) => [
+      toDateKey(row.date),
+      row.avg_duration_in_seconds,
+    ]),
+  );
+
+  return generateDateKeysInRange(startDate, endDate).map((dateKey) => ({
+    date: dateKey,
+    avg_duration_in_seconds: avgDurationByDate.get(dateKey) || 0,
+  }));
+}
+
+async function getCollaboratorActivity(startDate, endDate) {
+  const hasRange = !!startDate && !!endDate;
+
   const [vehiclesByUser, checkInsByUser, checkOutsByUser, revenueByUser] =
     await Promise.all([
-      database.query(`
-      SELECT created_by AS user_id, COUNT(*)::int AS count
-      FROM vehicles
-      WHERE created_by IS NOT NULL
-      GROUP BY created_by
-      ;
-    `),
-      database.query(`
-      SELECT checked_in_by AS user_id, COUNT(*)::int AS count
-      FROM stays
-      WHERE checked_in_by IS NOT NULL
-      GROUP BY checked_in_by
-      ;
-    `),
-      database.query(`
-      SELECT checked_out_by AS user_id, COUNT(*)::int AS count
-      FROM stays
-      WHERE checked_out_by IS NOT NULL
-      GROUP BY checked_out_by
-      ;
-    `),
-      database.query(`
-      SELECT checked_out_by AS user_id, COALESCE(SUM(price_cents), 0)::int AS count
-      FROM stays
-      WHERE checked_out_by IS NOT NULL AND exit_time IS NOT NULL
-      GROUP BY checked_out_by
-      ;
-    `),
+      hasRange
+        ? database.query({
+            text: `
+              SELECT created_by AS user_id, COUNT(*)::int AS count
+              FROM vehicles
+              WHERE created_by IS NOT NULL AND DATE(created_at) BETWEEN $1::date AND $2::date
+              GROUP BY created_by
+              ;
+              `,
+            values: [startDate, endDate],
+          })
+        : database.query(`
+            SELECT created_by AS user_id, COUNT(*)::int AS count
+            FROM vehicles
+            WHERE created_by IS NOT NULL
+            GROUP BY created_by
+            ;
+          `),
+      hasRange
+        ? database.query({
+            text: `
+              SELECT checked_in_by AS user_id, COUNT(*)::int AS count
+              FROM stays
+              WHERE checked_in_by IS NOT NULL AND DATE(entry_time) BETWEEN $1::date AND $2::date
+              GROUP BY checked_in_by
+              ;
+              `,
+            values: [startDate, endDate],
+          })
+        : database.query(`
+            SELECT checked_in_by AS user_id, COUNT(*)::int AS count
+            FROM stays
+            WHERE checked_in_by IS NOT NULL
+            GROUP BY checked_in_by
+            ;
+          `),
+      hasRange
+        ? database.query({
+            text: `
+              SELECT checked_out_by AS user_id, COUNT(*)::int AS count
+              FROM stays
+              WHERE checked_out_by IS NOT NULL AND DATE(exit_time) BETWEEN $1::date AND $2::date
+              GROUP BY checked_out_by
+              ;
+              `,
+            values: [startDate, endDate],
+          })
+        : database.query(`
+            SELECT checked_out_by AS user_id, COUNT(*)::int AS count
+            FROM stays
+            WHERE checked_out_by IS NOT NULL
+            GROUP BY checked_out_by
+            ;
+          `),
+      hasRange
+        ? database.query({
+            text: `
+              SELECT checked_out_by AS user_id, COALESCE(SUM(price_cents), 0)::int AS count
+              FROM stays
+              WHERE
+                checked_out_by IS NOT NULL AND exit_time IS NOT NULL
+                AND DATE(exit_time) BETWEEN $1::date AND $2::date
+              GROUP BY checked_out_by
+              ;
+              `,
+            values: [startDate, endDate],
+          })
+        : database.query(`
+            SELECT checked_out_by AS user_id, COALESCE(SUM(price_cents), 0)::int AS count
+            FROM stays
+            WHERE checked_out_by IS NOT NULL AND exit_time IS NOT NULL
+            GROUP BY checked_out_by
+            ;
+          `),
     ]);
 
   const activityByUserId = new Map();
@@ -343,6 +510,19 @@ async function seedDevelopmentData(triggeredBy) {
   });
 }
 
+async function resetDevelopmentData() {
+  await database.query(`
+    DELETE FROM stays
+    WHERE vehicle_id IN (SELECT id FROM vehicles WHERE plate LIKE 'DV%')
+    ;
+  `);
+  await database.query(`DELETE FROM vehicles WHERE plate LIKE 'DV%';`);
+  await database.query(`
+    DELETE FROM users WHERE username LIKE 'dev\\_%' ESCAPE '\\'
+    ;
+  `);
+}
+
 async function createFakeCollaborators() {
   const hashedPassword = await password.hash("dev-seed-not-a-real-login");
 
@@ -356,7 +536,7 @@ async function createFakeCollaborators() {
       FROM UNNEST($3::text[]) AS name
       RETURNING id
       ;
-    `,
+      `,
     values: [
       hashedPassword,
       authorization.collaboratorFeatures,
@@ -369,8 +549,8 @@ async function createFakeCollaborators() {
 
 const dashboard = {
   getSummary,
-  getPeakHours,
   seedDevelopmentData,
+  resetDevelopmentData,
 };
 
 export default dashboard;

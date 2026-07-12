@@ -20,27 +20,47 @@ async function fetchAPI(key) {
 
 export default function DashboardPage() {
   const { user, isLoading: isLoadingUser } = useCurrentUser();
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const isRangeActive = !!startDate && !!endDate;
+  const dashboardQuery = new URLSearchParams();
+  if (isRangeActive) {
+    dashboardQuery.set("start", startDate);
+    dashboardQuery.set("end", endDate);
+  }
+  const dashboardQueryString = dashboardQuery.toString();
+
   const {
     data,
     isLoading: isLoadingSummary,
     mutate,
   } = useSWR(
-    user?.features?.includes("read:dashboard") ? "/api/v1/dashboard" : null,
+    user?.features?.includes("read:dashboard")
+      ? `/api/v1/dashboard${dashboardQueryString ? `?${dashboardQueryString}` : ""}`
+      : null,
     fetchAPI,
   );
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
 
-  const { data: peakHoursByDate, isLoading: isLoadingPeakHoursByDate } = useSWR(
-    selectedDate ? `/api/v1/dashboard/peak-hours?date=${selectedDate}` : null,
-    fetchAPI,
-  );
+  function clearRange() {
+    setStartDate("");
+    setEndDate("");
+  }
 
   async function handleSeed() {
     setIsSeeding(true);
     await fetch("/api/v1/dashboard/seed", { method: "POST" });
     await mutate();
     setIsSeeding(false);
+  }
+
+  async function handleReset() {
+    setIsResetting(true);
+    await fetch("/api/v1/dashboard/seed", { method: "DELETE" });
+    await mutate();
+    setIsResetting(false);
   }
 
   if (isLoadingUser) {
@@ -72,11 +92,6 @@ export default function DashboardPage() {
     );
   }
 
-  const peakHoursSource =
-    selectedDate && peakHoursByDate
-      ? peakHoursByDate.peak_hours
-      : data.peak_hours;
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -88,19 +103,64 @@ export default function DashboardPage() {
         </div>
 
         {IS_DEVELOPMENT && (
+          <div className={styles.devActions}>
+            <button
+              type="button"
+              onClick={handleSeed}
+              disabled={isSeeding || isResetting}
+              className={styles.seedButton}
+            >
+              {isSeeding ? "Gerando..." : "Gerar dados de teste (dev)"}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={isSeeding || isResetting}
+              className={styles.resetButton}
+            >
+              {isResetting ? "Removendo..." : "Resetar dados de teste (dev)"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.rangeFilter}>
+        <label className={styles.rangeField}>
+          De
+          <input
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+          />
+        </label>
+        <label className={styles.rangeField}>
+          Até
+          <input
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+          />
+        </label>
+        {isRangeActive && (
           <button
             type="button"
-            onClick={handleSeed}
-            disabled={isSeeding}
-            className={styles.seedButton}
+            className={styles.clearFilterButton}
+            onClick={clearRange}
           >
-            {isSeeding ? "Gerando..." : "Gerar dados de teste (dev)"}
+            Ver todo o período
           </button>
         )}
       </div>
 
       <div className={styles.statGrid}>
-        <StatTile label="Veículos cadastrados" value={data.total_vehicles} />
+        <StatTile
+          label={
+            isRangeActive
+              ? "Veículos cadastrados no período"
+              : "Veículos cadastrados"
+          }
+          value={data.total_vehicles}
+        />
         <StatTile label="Estacionados agora" value={data.currently_parked} />
         <StatTile
           label="Receita hoje"
@@ -108,7 +168,7 @@ export default function DashboardPage() {
           accent
         />
         <StatTile
-          label="Receita total"
+          label={isRangeActive ? "Receita no período" : "Receita total"}
           value={formatCentsAsCurrency(data.revenue.total_cents)}
           accent
         />
@@ -117,36 +177,14 @@ export default function DashboardPage() {
       <h2 className={styles.sectionTitle}>Operação</h2>
       <div className={styles.chartGrid}>
         <div className={styles.chartCard}>
-          <div className={styles.chartHeader}>
-            <h3>Horários de pico</h3>
-            <div className={styles.dateFilter}>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
-              />
-              {selectedDate && (
-                <button
-                  type="button"
-                  className={styles.clearFilterButton}
-                  onClick={() => setSelectedDate("")}
-                >
-                  Ver todo o período
-                </button>
-              )}
-            </div>
-          </div>
-          {selectedDate && isLoadingPeakHoursByDate ? (
-            <p>Carregando...</p>
-          ) : (
-            <BarChart
-              data={peakHoursSource.map((entry) => ({
-                label: `${entry.hour}h`,
-                value: entry.count,
-              }))}
-              showLabelEvery={3}
-            />
-          )}
+          <h3>Horários de pico</h3>
+          <BarChart
+            data={data.peak_hours.map((entry) => ({
+              label: `${entry.hour}h`,
+              value: entry.count,
+            }))}
+            showLabelEvery={3}
+          />
         </div>
 
         <div className={styles.chartCard}>
@@ -164,7 +202,11 @@ export default function DashboardPage() {
       <h2 className={styles.sectionTitle}>Tendência</h2>
       <div className={styles.chartGrid}>
         <div className={styles.chartCard}>
-          <h3>Entradas nos últimos 30 dias</h3>
+          <h3>
+            {isRangeActive
+              ? "Entradas no período"
+              : "Entradas nos últimos 30 dias"}
+          </h3>
           <LineChart
             data={data.daily_stays.map((entry) => ({
               label: entry.date,

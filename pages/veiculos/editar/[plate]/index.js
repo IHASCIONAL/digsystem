@@ -1,18 +1,25 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useCurrentUser } from "lib/useCurrentUser.js";
 import styles from "./index.module.css";
 
 const OPTIONAL_FIELDS = ["owner_name", "model", "brand", "color", "notes"];
+const DELETION_WINDOW_IN_MS = 60 * 60 * 1000;
 
 export default function VehicleEditPage() {
   const router = useRouter();
+  const { user } = useCurrentUser();
   const routePlate =
     typeof router.query.plate === "string" ? router.query.plate : null;
 
   const [targetPlate, setTargetPlate] = useState(null);
   const [formValues, setFormValues] = useState(null);
   const [createdAt, setCreatedAt] = useState(null);
+  const [createdBy, setCreatedBy] = useState(null);
   const [status, setStatus] = useState({ type: "loading" });
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   useEffect(() => {
     if (!routePlate) return;
@@ -28,6 +35,7 @@ export default function VehicleEditPage() {
 
       setTargetPlate(responseBody.plate);
       setCreatedAt(responseBody.created_at);
+      setCreatedBy(responseBody.created_by);
       setFormValues({
         plate: responseBody.plate,
         owner_name: responseBody.owner_name || "",
@@ -69,6 +77,34 @@ export default function VehicleEditPage() {
     setTargetPlate(responseBody.plate);
     setStatus({ type: "success" });
   }
+
+  async function handleDelete() {
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    const response = await fetch(`/api/v1/vehicles/${targetPlate}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const responseBody = await response.json();
+      setDeleteError(responseBody.message);
+      setIsDeleting(false);
+      setIsConfirmingDelete(false);
+      return;
+    }
+
+    router.push("/veiculos/todos");
+  }
+
+  const isAdmin = user?.features?.includes("delete:vehicle:others");
+  const isWithinDeletionWindow =
+    createdAt &&
+    Date.now() - new Date(createdAt).getTime() <= DELETION_WINDOW_IN_MS;
+  const canDelete =
+    !!user &&
+    !!targetPlate &&
+    (isAdmin || (user.id === createdBy && isWithinDeletionWindow));
 
   if (status.type === "loading") {
     return (
@@ -175,6 +211,49 @@ export default function VehicleEditPage() {
 
       {status.type === "error" && (
         <p className={styles.errorMessage}>{status.message}</p>
+      )}
+
+      {canDelete && (
+        <button
+          type="button"
+          className={styles.deleteButton}
+          onClick={() => setIsConfirmingDelete(true)}
+        >
+          Excluir veículo
+        </button>
+      )}
+
+      {deleteError && <p className={styles.errorMessage}>{deleteError}</p>}
+
+      {isConfirmingDelete && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} role="dialog" aria-modal="true">
+            <h2>Excluir veículo</h2>
+            <p>
+              Tem certeza que deseja excluir o veículo{" "}
+              <strong>{targetPlate}</strong> do cadastro? Essa ação não pode ser
+              desfeita.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.modalCancelButton}
+                onClick={() => setIsConfirmingDelete(false)}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className={styles.modalDeleteButton}
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Excluindo..." : "Excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

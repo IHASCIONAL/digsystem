@@ -86,18 +86,28 @@ async function createSession(userId) {
 }
 
 async function createVehicle(vehicleObject = {}) {
-  return await vehicle.create({
-    plate: vehicleObject.plate || generateRandomPlate(),
-    owner_name: vehicleObject.owner_name,
-    model: vehicleObject.model,
-    brand: vehicleObject.brand,
-    color: vehicleObject.color,
-    notes: vehicleObject.notes,
-  });
+  return await vehicle.create(
+    {
+      plate: vehicleObject.plate || generateRandomPlate(),
+      owner_name: vehicleObject.owner_name,
+      model: vehicleObject.model,
+      brand: vehicleObject.brand,
+      color: vehicleObject.color,
+      notes: vehicleObject.notes,
+    },
+    vehicleObject.createdBy,
+  );
 
   function generateRandomPlate() {
     return `${faker.string.alpha({ length: 3, casing: "upper" })}${faker.string.numeric(4)}`;
   }
+}
+
+async function backdateVehicleCreation(vehicleId, createdAt) {
+  await database.query({
+    text: `UPDATE vehicles SET created_at = $2 WHERE id = $1;`,
+    values: [vehicleId, createdAt],
+  });
 }
 
 async function createStayAt(vehicleId, checkedInBy, { entryTime }) {
@@ -170,6 +180,7 @@ const orchestrator = {
   createCollaborator,
   createSession,
   createVehicle,
+  backdateVehicleCreation,
   createStayAt,
   createShiftAt,
   deleteAllEmails,

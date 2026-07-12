@@ -17,6 +17,7 @@ export default function VehicleRegistrationPage() {
   const router = useRouter();
   const [formValues, setFormValues] = useState(EMPTY_FORM_VALUES);
   const [status, setStatus] = useState({ type: "idle" });
+  const [returnToOperation, setReturnToOperation] = useState(false);
 
   useEffect(() => {
     if (typeof router.query.plate === "string") {
@@ -24,6 +25,7 @@ export default function VehicleRegistrationPage() {
         ...previousValues,
         plate: router.query.plate,
       }));
+      setReturnToOperation(true);
     }
   }, [router.query.plate]);
 
@@ -131,14 +133,37 @@ export default function VehicleRegistrationPage() {
         </button>
       </form>
 
-      {status.type === "success" && (
-        <p className={styles.success}>
-          Veículo {status.vehicle.plate} cadastrado com sucesso.
-        </p>
-      )}
-
       {status.type === "error" && (
         <p className={styles.errorMessage}>{status.message}</p>
+      )}
+
+      {status.type === "success" && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} role="dialog" aria-modal="true">
+            <h2>Veículo cadastrado</h2>
+            <p>
+              O veículo <strong>{status.vehicle.plate}</strong> foi cadastrado
+              com sucesso.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.modalConfirmButton}
+                onClick={() => {
+                  if (returnToOperation) {
+                    router.push(
+                      `/veiculos/operacao?plate=${encodeURIComponent(status.vehicle.plate)}`,
+                    );
+                    return;
+                  }
+                  setStatus({ type: "idle" });
+                }}
+              >
+                {returnToOperation ? "Ir para entrada e saída" : "OK"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

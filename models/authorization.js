@@ -27,6 +27,8 @@ const availableFeatures = [
   "create:vehicle",
   "read:vehicle",
   "update:vehicle",
+  "delete:vehicle",
+  "delete:vehicle:others",
 
   // STAY
   "create:stay",
@@ -56,6 +58,7 @@ const vehicleAndStayFeatures = [
   "create:vehicle",
   "read:vehicle",
   "update:vehicle",
+  "delete:vehicle",
   "create:stay",
   "read:stay",
   "update:stay",
@@ -69,6 +72,7 @@ const collaboratorFeatures = [...vehicleAndStayFeatures, ...shiftFeatures];
 
 const adminFeatures = [
   ...vehicleAndStayFeatures,
+  "delete:vehicle:others",
   "create:user",
   "read:user",
   "update:user",
@@ -81,6 +85,12 @@ const adminFeatures = [
   "read:shift:all",
   "update:shift:admin",
 ];
+
+// A collaborator can only delete a vehicle they registered themselves, and
+// only shortly after registering it — long enough to fix a typo'd plate,
+// not to remove one with real activity behind it.
+const VEHICLE_DELETION_WINDOW_IN_MS = 60 * 60 * 1000;
+
 function can(user, feature, resource) {
   validateUser(user);
   validateFeature(feature);
@@ -97,6 +107,20 @@ function can(user, feature, resource) {
       authorized = true;
     }
   }
+
+  if (feature === "delete:vehicle" && resource) {
+    authorized = false;
+
+    if (can(user, "delete:vehicle:others")) {
+      authorized = true;
+    } else if (user.id === resource.created_by) {
+      const registeredAt = new Date(resource.created_at).getTime();
+      if (Date.now() - registeredAt <= VEHICLE_DELETION_WINDOW_IN_MS) {
+        authorized = true;
+      }
+    }
+  }
+
   return authorized;
 }
 
