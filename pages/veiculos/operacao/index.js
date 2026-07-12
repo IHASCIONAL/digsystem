@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import useSWR from "swr";
 import { formatElapsedTime } from "lib/formatElapsedTime.js";
@@ -11,12 +12,19 @@ async function fetchAPI(key) {
 }
 
 export default function VehicleOperationPage() {
+  const router = useRouter();
   const [plate, setPlate] = useState("");
   const [status, setStatus] = useState({ type: "idle" });
   const [unregisteredPlate, setUnregisteredPlate] = useState(null);
   const [checkinSuccessPlate, setCheckinSuccessPlate] = useState(null);
   const [checkoutSuccess, setCheckoutSuccess] = useState(null);
   const [pendingCheckoutPlate, setPendingCheckoutPlate] = useState(null);
+
+  useEffect(() => {
+    if (typeof router.query.plate === "string") {
+      setPlate(router.query.plate);
+    }
+  }, [router.query.plate]);
 
   const {
     data: parkedVehicles,

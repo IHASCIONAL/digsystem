@@ -17,6 +17,7 @@ export default function VehicleRegistrationPage() {
   const router = useRouter();
   const [formValues, setFormValues] = useState(EMPTY_FORM_VALUES);
   const [status, setStatus] = useState({ type: "idle" });
+  const [returnToOperation, setReturnToOperation] = useState(false);
 
   useEffect(() => {
     if (typeof router.query.plate === "string") {
@@ -24,6 +25,7 @@ export default function VehicleRegistrationPage() {
         ...previousValues,
         plate: router.query.plate,
       }));
+      setReturnToOperation(true);
     }
   }, [router.query.plate]);
 
@@ -147,9 +149,17 @@ export default function VehicleRegistrationPage() {
               <button
                 type="button"
                 className={styles.modalConfirmButton}
-                onClick={() => setStatus({ type: "idle" })}
+                onClick={() => {
+                  if (returnToOperation) {
+                    router.push(
+                      `/veiculos/operacao?plate=${encodeURIComponent(status.vehicle.plate)}`,
+                    );
+                    return;
+                  }
+                  setStatus({ type: "idle" });
+                }}
               >
-                OK
+                {returnToOperation ? "Ir para entrada e saída" : "OK"}
               </button>
             </div>
           </div>
