@@ -173,6 +173,32 @@
   font-size: 0.95rem;
 }
 
+.checkoutSummary {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.checkoutSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.checkoutTotal {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary-darker);
+  font-variant-numeric: tabular-nums;
+}
+
 .modalActions {
   display: flex;
   justify-content: flex-end;

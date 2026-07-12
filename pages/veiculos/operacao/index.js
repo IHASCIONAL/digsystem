@@ -2,6 +2,7 @@ import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { formatElapsedTime } from "lib/formatElapsedTime.js";
+import { formatCentsAsCurrency } from "lib/formatCurrency.js";
 import styles from "./index.module.css";
 
 async function fetchAPI(key) {
@@ -14,6 +15,7 @@ export default function VehicleOperationPage() {
   const [status, setStatus] = useState({ type: "idle" });
   const [unregisteredPlate, setUnregisteredPlate] = useState(null);
   const [checkinSuccessPlate, setCheckinSuccessPlate] = useState(null);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(null);
   const [pendingCheckoutPlate, setPendingCheckoutPlate] = useState(null);
 
   const {
@@ -64,15 +66,15 @@ export default function VehicleOperationPage() {
       return;
     }
 
+    setStatus({ type: "idle" });
+
     if (action === "checkin") {
-      setStatus({ type: "idle" });
       setCheckinSuccessPlate(submittedPlate);
     } else {
-      setStatus({
-        type: "success",
-        action,
+      setCheckoutSuccess({
         plate: submittedPlate,
-        stay: responseBody,
+        durationInSeconds: responseBody.duration_in_seconds,
+        priceCents: responseBody.price_cents,
       });
     }
     mutateParked();
@@ -113,13 +115,6 @@ export default function VehicleOperationPage() {
           Registrar saída
         </button>
       </div>
-
-      {status.type === "success" && status.action === "checkout" && (
-        <p className={styles.success}>
-          Saída registrada para {status.plate}. Permanência:{" "}
-          {formatElapsedTime(status.stay.duration_in_seconds)}.
-        </p>
-      )}
 
       {status.type === "error" && (
         <p className={styles.errorMessage}>{status.message}</p>
@@ -195,6 +190,41 @@ export default function VehicleOperationPage() {
                 type="button"
                 className={styles.modalConfirmButton}
                 onClick={() => setCheckinSuccessPlate(null)}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {checkoutSuccess && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} role="dialog" aria-modal="true">
+            <h2>Saída registrada</h2>
+            <p>
+              A saída do veículo <strong>{checkoutSuccess.plate}</strong> foi
+              registrada com sucesso.
+            </p>
+            <div className={styles.checkoutSummary}>
+              <div className={styles.checkoutSummaryRow}>
+                <span>Permanência</span>
+                <span>
+                  {formatElapsedTime(checkoutSuccess.durationInSeconds)}
+                </span>
+              </div>
+              <div className={styles.checkoutSummaryRow}>
+                <span>Valor total</span>
+                <span className={styles.checkoutTotal}>
+                  {formatCentsAsCurrency(checkoutSuccess.priceCents)}
+                </span>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.modalConfirmButton}
+                onClick={() => setCheckoutSuccess(null)}
               >
                 OK
               </button>
