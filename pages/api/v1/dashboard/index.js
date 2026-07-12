@@ -10,7 +10,9 @@ router.get(controller.canRequest("read:dashboard"), getHandler);
 export default router.handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
-  const summary = await dashboard.getSummary();
+  const { start, end } = request.query;
+
+  const summary = await dashboard.getSummary(start, end);
 
   return response.status(200).json(summary);
 }
