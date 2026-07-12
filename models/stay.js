@@ -192,9 +192,12 @@ async function findAllByVehicleId(vehicleId) {
         `,
       values: [vehicleId],
     });
-    async function findOneById(stayId) {
-      const results = await database.query({
-        text: `
+  }
+}
+
+async function findOneById(stayId) {
+  const results = await database.query({
+    text: `
       SELECT
         stays.*,
         vehicles.plate,
@@ -211,33 +214,33 @@ async function findAllByVehicleId(vehicleId) {
       LIMIT 1
       ;
       `,
-        values: [stayId],
-      });
-      if (results.rowCount === 0) {
-        throw new NotFoundError({
-          message: "A permanência informada não foi encontrada no sistema.",
-          action: "Verifique se o identificador está correto.",
-        });
-      }
-      return results.rows[0];
-    }
+    values: [stayId],
+  });
+  if (results.rowCount === 0) {
+    throw new NotFoundError({
+      message: "A permanência informada não foi encontrada no sistema.",
+      action: "Verifique se o identificador está correto.",
+    });
+  }
+  return results.rows[0];
+}
 
-    async function findAllInRange(startDate, endDate) {
-      if (startDate) validateDate(startDate);
-      if (endDate) validateDate(endDate);
+async function findAllInRange(startDate, endDate) {
+  if (startDate) validateDate(startDate);
+  if (endDate) validateDate(endDate);
 
-      const results = await runSelectQuery(startDate, endDate);
+  const results = await runSelectQuery(startDate, endDate);
 
-      return results.rows.map((pastStay) => ({
-        ...pastStay,
-        duration_in_seconds: pastStay.exit_time
-          ? calculateDurationInSeconds(pastStay)
-          : null,
-      }));
+  return results.rows.map((pastStay) => ({
+    ...pastStay,
+    duration_in_seconds: pastStay.exit_time
+      ? calculateDurationInSeconds(pastStay)
+      : null,
+  }));
 
-      async function runSelectQuery(startDate, endDate) {
-        return database.query({
-          text: `
+  async function runSelectQuery(startDate, endDate) {
+    return database.query({
+      text: `
         SELECT
           stays.*,
           vehicles.plate,
@@ -257,41 +260,41 @@ async function findAllByVehicleId(vehicleId) {
           stays.entry_time DESC
         ;
         `,
-          values: [startDate || null, endDate || null],
-        });
-      }
-    }
+      values: [startDate || null, endDate || null],
+    });
+  }
+}
 
-    function validateDate(date) {
-      if (!DATE_FORMAT_REGEX.test(date) || Number.isNaN(Date.parse(date))) {
-        throw new ValidationError({
-          message: "A data informada não é válida.",
-          action: "Informe uma data no formato AAAA-MM-DD.",
-        });
-      }
-    }
+function validateDate(date) {
+  if (!DATE_FORMAT_REGEX.test(date) || Number.isNaN(Date.parse(date))) {
+    throw new ValidationError({
+      message: "A data informada não é válida.",
+      action: "Informe uma data no formato AAAA-MM-DD.",
+    });
+  }
+}
 
-    async function adminUpdate(stayId, updates, editedBy) {
-      const existingStay = await findOneById(stayId);
+async function adminUpdate(stayId, updates, editedBy) {
+  const existingStay = await findOneById(stayId);
 
-      const entryTime =
-        updates.entry_time !== undefined
-          ? updates.entry_time
-          : existingStay.entry_time;
-      const exitTime =
-        updates.exit_time !== undefined
-          ? updates.exit_time
-          : existingStay.exit_time;
-      const priceCents = exitTime
-        ? updates.price_cents !== undefined
-          ? updates.price_cents
-          : existingStay.price_cents
-        : null;
+  const entryTime =
+    updates.entry_time !== undefined
+      ? updates.entry_time
+      : existingStay.entry_time;
+  const exitTime =
+    updates.exit_time !== undefined
+      ? updates.exit_time
+      : existingStay.exit_time;
+  const priceCents = exitTime
+    ? updates.price_cents !== undefined
+      ? updates.price_cents
+      : existingStay.price_cents
+    : null;
 
-      validateAdminUpdate({ entryTime, exitTime, priceCents });
+  validateAdminUpdate({ entryTime, exitTime, priceCents });
 
-      const results = await database.query({
-        text: `
+  const results = await database.query({
+    text: `
       UPDATE stays
       SET
         entry_time = $2,
@@ -305,61 +308,59 @@ async function findAllByVehicleId(vehicleId) {
       RETURNING *
       ;
       `,
-        values: [stayId, entryTime, exitTime, priceCents, editedBy],
-      });
+    values: [stayId, entryTime, exitTime, priceCents, editedBy],
+  });
 
-      const updatedStay = results.rows[0];
-      return {
-        ...updatedStay,
-        duration_in_seconds: updatedStay.exit_time
-          ? calculateDurationInSeconds(updatedStay)
-          : null,
-      };
+  const updatedStay = results.rows[0];
+  return {
+    ...updatedStay,
+    duration_in_seconds: updatedStay.exit_time
+      ? calculateDurationInSeconds(updatedStay)
+      : null,
+  };
+}
+
+function validateAdminUpdate({ entryTime, exitTime, priceCents }) {
+  if (!entryTime || Number.isNaN(Date.parse(entryTime))) {
+    throw new ValidationError({
+      message: "A data/hora de entrada informada não é válida.",
+      action: "Informe uma data/hora de entrada válida.",
+    });
+  }
+
+  if (exitTime) {
+    if (Number.isNaN(Date.parse(exitTime))) {
+      throw new ValidationError({
+        message: "A data/hora de saída informada não é válida.",
+        action: "Informe uma data/hora de saída válida.",
+      });
     }
 
-    function validateAdminUpdate({ entryTime, exitTime, priceCents }) {
-      if (!entryTime || Number.isNaN(Date.parse(entryTime))) {
-        throw new ValidationError({
-          message: "A data/hora de entrada informada não é válida.",
-          action: "Informe uma data/hora de entrada válida.",
-        });
-      }
+    if (new Date(exitTime) <= new Date(entryTime)) {
+      throw new ValidationError({
+        message: "A saída deve ser depois da entrada.",
+        action: "Ajuste os horários informados.",
+      });
+    }
 
-      if (exitTime) {
-        if (Number.isNaN(Date.parse(exitTime))) {
-          throw new ValidationError({
-            message: "A data/hora de saída informada não é válida.",
-            action: "Informe uma data/hora de saída válida.",
-          });
-        }
-
-        if (new Date(exitTime) <= new Date(entryTime)) {
-          throw new ValidationError({
-            message: "A saída deve ser depois da entrada.",
-            action: "Ajuste os horários informados.",
-          });
-        }
-
-        if (!Number.isInteger(priceCents) || priceCents <= 0) {
-          throw new ValidationError({
-            message:
-              "O valor deve ser um número inteiro positivo, em centavos, quando há saída registrada.",
-            action: "Informe um valor válido em centavos.",
-          });
-        }
-      }
+    if (!Number.isInteger(priceCents) || priceCents <= 0) {
+      throw new ValidationError({
+        message:
+          "O valor deve ser um número inteiro positivo, em centavos, quando há saída registrada.",
+        action: "Informe um valor válido em centavos.",
+      });
     }
   }
 }
 
 const stay = {
   create,
-  findOneById,
-  findAllInRange,
-  adminUpdate,
   close,
   findAllParked,
   findAllByVehicleId,
+  findOneById,
+  findAllInRange,
+  adminUpdate,
 };
 
 export default stay;
