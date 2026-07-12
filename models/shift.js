@@ -158,10 +158,113 @@ async function autoCloseStaleShift(userId) {
   });
 }
 
+async function findAll() {
+  const results = await database.query(`
+    SELECT
+      shifts.*,
+      collaborator.username AS collaborator_username,
+      editor.username AS edited_by_username
+    FROM shifts
+    INNER JOIN users AS collaborator ON collaborator.id = shifts.user_id
+    LEFT JOIN users AS editor ON editor.id = shifts.edited_by
+    ORDER BY
+      shifts.check_in_time DESC
+    ;
+  `);
+  return results.rows;
+}
+
+async function findOneById(shiftId) {
+  const results = await database.query({
+    text: `
+      SELECT
+        shifts.*,
+        collaborator.username AS collaborator_username,
+        editor.username AS edited_by_username
+      FROM shifts
+      INNER JOIN users AS collaborator ON collaborator.id = shifts.user_id
+      LEFT JOIN users AS editor ON editor.id = shifts.edited_by
+      WHERE shifts.id = $1
+      LIMIT 1
+      ;
+      `,
+    values: [shiftId],
+  });
+  if (results.rowCount === 0) {
+    throw new NotFoundError({
+      message: "O expediente informado não foi encontrado no sistema.",
+      action: "Verifique se o identificador está correto.",
+    });
+  }
+  return results.rows[0];
+}
+
+async function adminUpdate(shiftId, updates, editedBy) {
+  const existingShift = await findOneById(shiftId);
+
+  const checkInTime =
+    updates.check_in_time !== undefined
+      ? updates.check_in_time
+      : existingShift.check_in_time;
+  const checkOutTime =
+    updates.check_out_time !== undefined
+      ? updates.check_out_time
+      : existingShift.check_out_time;
+
+  validateAdminUpdate({ checkInTime, checkOutTime });
+
+  const results = await database.query({
+    text: `
+      UPDATE shifts
+      SET
+        check_in_time = $2,
+        check_out_time = $3,
+        auto_closed = false,
+        edited_by = $4,
+        edited_at = timezone('utc', now()),
+        updated_at = timezone('utc', now())
+      WHERE
+        id = $1
+      RETURNING *
+      ;
+      `,
+    values: [shiftId, checkInTime, checkOutTime, editedBy],
+  });
+  return results.rows[0];
+}
+
+function validateAdminUpdate({ checkInTime, checkOutTime }) {
+  if (!checkInTime || Number.isNaN(Date.parse(checkInTime))) {
+    throw new ValidationError({
+      message: "A data/hora de check-in informada não é válida.",
+      action: "Informe uma data/hora de check-in válida.",
+    });
+  }
+
+  if (checkOutTime) {
+    if (Number.isNaN(Date.parse(checkOutTime))) {
+      throw new ValidationError({
+        message: "A data/hora de check-out informada não é válida.",
+        action: "Informe uma data/hora de check-out válida.",
+      });
+    }
+
+    if (new Date(checkOutTime) <= new Date(checkInTime)) {
+      throw new ValidationError({
+        message: "O check-out deve ser depois do check-in.",
+        action: "Ajuste os horários informados.",
+      });
+    }
+  }
+}
+
 const shift = {
   checkIn,
   checkOut,
   findCurrentByUserId,
+  findAll,
+  findOneById,
+  adminUpdate,
   AUTO_CLOSE_AFTER_HOURS,
 };
 
