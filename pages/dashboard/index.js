@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import useSWR from "swr";
 import { useCurrentUser } from "lib/useCurrentUser.js";
 import { formatCentsAsCurrency } from "lib/formatCurrency.js";
+import { formatElapsedTime } from "lib/formatElapsedTime.js";
 import styles from "./index.module.css";
 
 const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
@@ -161,14 +162,34 @@ export default function DashboardPage() {
       </div>
 
       <h2 className={styles.sectionTitle}>Tendência</h2>
-      <div className={styles.chartCard}>
-        <h3>Entradas nos últimos 30 dias</h3>
-        <LineChart
-          data={data.daily_stays.map((entry) => ({
-            label: entry.date,
-            value: entry.count,
-          }))}
-        />
+      <div className={styles.chartGrid}>
+        <div className={styles.chartCard}>
+          <h3>Entradas nos últimos 30 dias</h3>
+          <LineChart
+            data={data.daily_stays.map((entry) => ({
+              label: entry.date,
+              value: entry.count,
+            }))}
+            formatValue={(value) =>
+              `${value} ${value === 1 ? "entrada" : "entradas"}`
+            }
+            formatDelta={formatCountDelta}
+          />
+        </div>
+
+        <div className={styles.chartCard}>
+          <h3>Tempo médio de permanência por dia</h3>
+          <LineChart
+            data={data.average_duration_per_day.map((entry) => ({
+              label: entry.date,
+              value: entry.avg_duration_in_seconds,
+            }))}
+            formatValue={(value) =>
+              value > 0 ? formatElapsedTime(value) : "Sem permanências"
+            }
+            formatDelta={formatDurationDelta}
+          />
+        </div>
       </div>
 
       <h2 className={styles.sectionTitle}>Equipe</h2>
@@ -283,7 +304,11 @@ function BarChart({ data, showLabelEvery }) {
   );
 }
 
-function LineChart({ data }) {
+function LineChart({
+  data,
+  formatValue = (value) => `${value} ${value === 1 ? "entrada" : "entradas"}`,
+  formatDelta = formatCountDelta,
+}) {
   const svgRef = useRef(null);
   const [hoverIndex, setHoverIndex] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState(null);
@@ -413,8 +438,7 @@ function LineChart({ data }) {
             {formatFullDate(hoveredPoint.label)}
           </div>
           <div className={styles.tooltipValue}>
-            {hoveredPoint.value}{" "}
-            {hoveredPoint.value === 1 ? "entrada" : "entradas"}
+            {formatValue(hoveredPoint.value)}
           </div>
           {hoverIndex > 0 && (
             <div className={styles.tooltipDelta}>
@@ -427,10 +451,16 @@ function LineChart({ data }) {
   );
 }
 
-function formatDelta(delta) {
+function formatCountDelta(delta) {
   if (delta > 0) return `▲ +${delta} vs. dia anterior`;
   if (delta < 0) return `▼ ${delta} vs. dia anterior`;
   return "Estável vs. dia anterior";
+}
+
+function formatDurationDelta(delta) {
+  if (delta === 0) return "Estável vs. dia anterior";
+  const sign = delta > 0 ? "▲ +" : "▼ -";
+  return `${sign}${formatElapsedTime(Math.abs(delta))} vs. dia anterior`;
 }
 
 function roundedTopBarPath(x, y, width, height, radius) {

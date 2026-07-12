@@ -26,6 +26,7 @@ async function getSummary() {
     peakHours,
     busiestWeekdays,
     dailyStays,
+    averageDurationPerDay,
     collaboratorActivity,
   ] = await Promise.all([
     countTotalVehicles(),
@@ -34,6 +35,7 @@ async function getSummary() {
     getPeakHours(),
     getBusiestWeekdays(),
     getDailyStays(),
+    getAverageDurationPerDay(),
     getCollaboratorActivity(),
   ]);
 
@@ -44,6 +46,7 @@ async function getSummary() {
     peak_hours: peakHours,
     busiest_weekdays: busiestWeekdays,
     daily_stays: dailyStays,
+    average_duration_per_day: averageDurationPerDay,
     collaborator_activity: collaboratorActivity,
   };
 }
@@ -178,6 +181,39 @@ async function getDailyStays() {
 
 function toDateKey(date) {
   return new Date(date).toISOString().slice(0, 10);
+}
+
+async function getAverageDurationPerDay() {
+  const results = await database.query(`
+    SELECT
+      DATE(entry_time) AS date,
+      AVG(EXTRACT(EPOCH FROM (exit_time - entry_time)))::int AS avg_duration_in_seconds
+    FROM stays
+    WHERE
+      entry_time >= NOW() - INTERVAL '${DAILY_STAYS_WINDOW_IN_DAYS} days'
+      AND exit_time IS NOT NULL
+    GROUP BY date
+    ;
+  `);
+
+  const avgDurationByDate = new Map(
+    results.rows.map((row) => [
+      toDateKey(row.date),
+      row.avg_duration_in_seconds,
+    ]),
+  );
+
+  const days = [];
+  for (let offset = DAILY_STAYS_WINDOW_IN_DAYS - 1; offset >= 0; offset--) {
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() - offset);
+    const dateKey = toDateKey(date);
+    days.push({
+      date: dateKey,
+      avg_duration_in_seconds: avgDurationByDate.get(dateKey) || 0,
+    });
+  }
+  return days;
 }
 
 async function getCollaboratorActivity() {

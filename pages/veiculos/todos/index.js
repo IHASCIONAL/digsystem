@@ -29,6 +29,7 @@ export default function VehicleListPage() {
               <th>Modelo</th>
               <th>Marca</th>
               <th>Cor</th>
+              <th>Cadastrado em</th>
               <th></th>
             </tr>
           </thead>
@@ -40,6 +41,11 @@ export default function VehicleListPage() {
                 <td>{registeredVehicle.model || "—"}</td>
                 <td>{registeredVehicle.brand || "—"}</td>
                 <td>{registeredVehicle.color || "—"}</td>
+                <td>
+                  {new Date(registeredVehicle.created_at).toLocaleDateString(
+                    "pt-BR",
+                  )}
+                </td>
                 <td>
                   <Link
                     href={`/veiculos/editar/${registeredVehicle.plate}`}
