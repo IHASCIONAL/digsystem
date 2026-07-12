@@ -9,6 +9,9 @@ beforeAll(async () => {
 
   const collaborator = await orchestrator.createCollaborator({});
   collaboratorSession = await orchestrator.createSession(collaborator.id);
+  await orchestrator.createShiftAt(collaborator.id, {
+    checkInTime: new Date().toISOString(),
+  });
 });
 
 describe("PATCH /api/v1/vehicles/[plate]", () => {

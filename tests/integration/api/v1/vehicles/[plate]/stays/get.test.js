@@ -10,6 +10,9 @@ beforeAll(async () => {
 
   collaborator = await orchestrator.createCollaborator({});
   collaboratorSession = await orchestrator.createSession(collaborator.id);
+  await orchestrator.createShiftAt(collaborator.id, {
+    checkInTime: new Date().toISOString(),
+  });
 });
 
 async function checkIn(plate) {
@@ -101,7 +104,10 @@ describe("GET /api/v1/vehicles/[plate]/stays", () => {
       exit_time: null,
       checked_in_by: collaborator.id,
       checked_out_by: null,
-      price_cents: 2500,
+      rate_cents: 2500,
+      price_cents: null,
+      edited_by: null,
+      edited_at: null,
       created_at: responseBody[0].created_at,
       updated_at: responseBody[0].updated_at,
       duration_in_seconds: null,
@@ -114,7 +120,10 @@ describe("GET /api/v1/vehicles/[plate]/stays", () => {
       exit_time: responseBody[1].exit_time,
       checked_in_by: collaborator.id,
       checked_out_by: collaborator.id,
+      rate_cents: 2500,
       price_cents: 2500,
+      edited_by: null,
+      edited_at: null,
       created_at: responseBody[1].created_at,
       updated_at: responseBody[1].updated_at,
       duration_in_seconds: responseBody[1].duration_in_seconds,

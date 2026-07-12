@@ -6,7 +6,11 @@ const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
 router.get(controller.canRequest("read:vehicle"), getHandler);
-router.post(controller.canRequest("create:vehicle"), postHandler);
+router.post(
+  controller.canRequest("create:vehicle"),
+  controller.requireOpenShift(),
+  postHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 

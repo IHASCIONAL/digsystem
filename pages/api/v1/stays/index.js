@@ -7,8 +7,16 @@ const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
 router.get(controller.canRequest("read:stay"), getHandler);
-router.post(controller.canRequest("create:stay"), postHandler);
-router.patch(controller.canRequest("update:stay"), patchHandler);
+router.post(
+  controller.canRequest("create:stay"),
+  controller.requireOpenShift(),
+  postHandler,
+);
+router.patch(
+  controller.canRequest("update:stay"),
+  controller.requireOpenShift(),
+  patchHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 

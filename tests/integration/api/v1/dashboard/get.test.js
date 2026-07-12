@@ -43,6 +43,9 @@ describe("GET /api/v1/dashboard", () => {
     const collaboratorSession = await orchestrator.createSession(
       collaborator.id,
     );
+    await orchestrator.createShiftAt(collaborator.id, {
+      checkInTime: new Date().toISOString(),
+    });
 
     await fetch("http://localhost:3000/api/v1/vehicles", {
       method: "POST",

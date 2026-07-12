@@ -12,6 +12,9 @@ beforeAll(async () => {
 
   collaborator = await orchestrator.createCollaborator({});
   collaboratorSession = await orchestrator.createSession(collaborator.id);
+  await orchestrator.createShiftAt(collaborator.id, {
+    checkInTime: new Date().toISOString(),
+  });
 });
 
 describe("POST /api/v1/vehicles", () => {
@@ -26,6 +29,33 @@ describe("POST /api/v1/vehicles", () => {
       });
 
       expect(response.status).toBe(403);
+    });
+  });
+
+  test("Collaborator without an open shift cannot register a vehicle", async () => {
+    const collaboratorWithoutShift = await orchestrator.createCollaborator({});
+    const sessionWithoutShift = await orchestrator.createSession(
+      collaboratorWithoutShift.id,
+    );
+
+    const response = await fetch("http://localhost:3000/api/v1/vehicles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `session_id=${sessionWithoutShift.token}`,
+      },
+      body: JSON.stringify({ plate: "NSH1234" }),
+    });
+
+    expect(response.status).toBe(403);
+
+    const responseBody = await response.json();
+    expect(responseBody).toEqual({
+      name: "ForbiddenError",
+      message:
+        "Você precisa fazer check-in do seu expediente antes de operar veículos.",
+      action: "Faça o check-in na página inicial antes de continuar.",
+      status_code: 403,
     });
   });
 
