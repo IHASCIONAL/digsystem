@@ -343,6 +343,19 @@ async function seedDevelopmentData(triggeredBy) {
   });
 }
 
+async function resetDevelopmentData() {
+  await database.query(`
+    DELETE FROM stays
+    WHERE vehicle_id IN (SELECT id FROM vehicles WHERE plate LIKE 'DV%')
+    ;
+  `);
+  await database.query(`DELETE FROM vehicles WHERE plate LIKE 'DV%';`);
+  await database.query(`
+    DELETE FROM users WHERE username LIKE 'dev\\_%' ESCAPE '\\'
+    ;
+  `);
+}
+
 async function createFakeCollaborators() {
   const hashedPassword = await password.hash("dev-seed-not-a-real-login");
 
@@ -371,6 +384,7 @@ const dashboard = {
   getSummary,
   getPeakHours,
   seedDevelopmentData,
+  resetDevelopmentData,
 };
 
 export default dashboard;

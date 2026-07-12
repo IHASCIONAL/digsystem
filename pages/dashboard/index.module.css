@@ -29,7 +29,14 @@
   color: var(--color-text-muted);
 }
 
-.seedButton {
+.devActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.seedButton,
+.resetButton {
   flex-shrink: 0;
   padding: 0.4rem 0.8rem;
   border: 1px dashed var(--color-text-muted);
@@ -45,7 +52,13 @@
   color: var(--color-hover-subtle);
 }
 
-.seedButton:disabled {
+.resetButton:hover:not(:disabled) {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.seedButton:disabled,
+.resetButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

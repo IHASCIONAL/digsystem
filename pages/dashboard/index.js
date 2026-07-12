@@ -29,6 +29,7 @@ export default function DashboardPage() {
     fetchAPI,
   );
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
 
   const { data: peakHoursByDate, isLoading: isLoadingPeakHoursByDate } = useSWR(
@@ -41,6 +42,13 @@ export default function DashboardPage() {
     await fetch("/api/v1/dashboard/seed", { method: "POST" });
     await mutate();
     setIsSeeding(false);
+  }
+
+  async function handleReset() {
+    setIsResetting(true);
+    await fetch("/api/v1/dashboard/seed", { method: "DELETE" });
+    await mutate();
+    setIsResetting(false);
   }
 
   if (isLoadingUser) {
@@ -88,14 +96,24 @@ export default function DashboardPage() {
         </div>
 
         {IS_DEVELOPMENT && (
-          <button
-            type="button"
-            onClick={handleSeed}
-            disabled={isSeeding}
-            className={styles.seedButton}
-          >
-            {isSeeding ? "Gerando..." : "Gerar dados de teste (dev)"}
-          </button>
+          <div className={styles.devActions}>
+            <button
+              type="button"
+              onClick={handleSeed}
+              disabled={isSeeding || isResetting}
+              className={styles.seedButton}
+            >
+              {isSeeding ? "Gerando..." : "Gerar dados de teste (dev)"}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={isSeeding || isResetting}
+              className={styles.resetButton}
+            >
+              {isResetting ? "Removendo..." : "Resetar dados de teste (dev)"}
+            </button>
+          </div>
         )}
       </div>
 
