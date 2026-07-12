@@ -131,14 +131,29 @@ export default function VehicleRegistrationPage() {
         </button>
       </form>
 
-      {status.type === "success" && (
-        <p className={styles.success}>
-          Veículo {status.vehicle.plate} cadastrado com sucesso.
-        </p>
-      )}
-
       {status.type === "error" && (
         <p className={styles.errorMessage}>{status.message}</p>
+      )}
+
+      {status.type === "success" && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} role="dialog" aria-modal="true">
+            <h2>Veículo cadastrado</h2>
+            <p>
+              O veículo <strong>{status.vehicle.plate}</strong> foi cadastrado
+              com sucesso.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.modalConfirmButton}
+                onClick={() => setStatus({ type: "idle" })}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
